@@ -55,7 +55,7 @@ resource "coderd_template" "awshp-k8s-with-claude-code" {
 
 resource "coderd_template" "awshp-linux-q-base" {
   name        = "awshp-linux-q-base"
-  display_name = "AWS Workshop - EC2 (Linux) Q Developer"
+  display_name = "AWS Workshop - EC2 (Linux) Q Developer with AI"
   description = "Provision AWS EC2 VMs as Q Developer enabled Coder workspaces"
   icon = "/icon/aws.png"
   versions = [{
