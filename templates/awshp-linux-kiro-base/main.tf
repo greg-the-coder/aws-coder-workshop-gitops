@@ -14,7 +14,7 @@ terraform {
 
 variable "aws_iam_profile" {
   type        = string
-  default     = ""
+  default     = "coder-workshop-ec2-workspace-profile"
   description = "The AWS IAM Role to assign to the Coder EC2 Workspace for access to other AWS Accounts and Services"
 }
 
@@ -138,6 +138,10 @@ data "aws_ami" "ubuntu" {
     values = ["hvm"]
   }
   owners = ["099720109477"] # Canonical
+}
+
+locals {
+    home_folder = "/home/coder"
 }
 
 resource "coder_agent" "dev" {
@@ -308,29 +312,33 @@ resource "coder_agent" "dev" {
 }
 
 module "coder-login" {
+    count    = data.coder_workspace.me.start_count
     source   = "registry.coder.com/coder/coder-login/coder"
     version  = "1.1.0"
-    agent_id = coder_agent.dev.id
+    agent_id = coder_agent.dev[0].id
 }
 
 module "code-server" {
+    count    = data.coder_workspace.me.start_count
     source   = "registry.coder.com/coder/code-server/coder"
     version  = "1.3.1"
-    agent_id       = coder_agent.dev.id
+    agent_id       = coder_agent.dev[0].id
     folder         = local.home_folder
     subdomain = false
     order = 0
 }
 
 module "kiro" {
+    count    = data.coder_workspace.me.start_count
     source   = "registry.coder.com/coder/kiro/coder"
     version  = "1.1.0"
-    agent_id = coder_agent.dev.id
+    agent_id = coder_agent.dev[0].id
     order = 1
 }
 
 resource "coder_app" "kiro_cli" {
-    agent_id     = coder_agent.dev.id
+    count        = data.coder_workspace.me.start_count
+    agent_id     = coder_agent.dev[0].id
     slug         = "kiro-auth"
     display_name = "Kiro CLI"
     icon         = "${data.coder_workspace.me.access_url}/icon/kiro.svg"
