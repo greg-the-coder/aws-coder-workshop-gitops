@@ -147,41 +147,70 @@ resource "coder_agent" "dev" {
   os             = "linux"
   startup_script = <<-EOT
     set -e
+    set -e
+    
+    # Create persistent bin directory
+    mkdir -p $HOME/bin
+    mkdir -p $HOME/.local/bin
+    
+    # Update PATH for current session
+    export PATH="$HOME/.local/bin:$HOME/bin:$HOME/.npm-global/bin:$PATH"
+    
     sudo apt update
-    sudo apt install -y curl unzip
+    sudo apt install -y curl unzip gnupg dirmngr
 
-    # install AWS CLI
-    if [ ! -d "aws" ]; then
+    # install AWS CLI to persistent location
+    if ! command -v aws &> /dev/null; then
+      echo "Installing AWS CLI..."
+      cd $HOME
       curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-      unzip awscliv2.zip
-      sudo ./aws/install
+      unzip -q awscliv2.zip
+      
+      # Install to home directory instead of system-wide
+      ./aws/install --install-dir $HOME/.local/aws-cli --bin-dir $HOME/.local/bin
+      
+      # Verify installation
       aws --version
-      rm awscliv2.zip
+      
+      # Cleanup
+      rm -rf aws awscliv2.zip
+      
+      echo "AWS CLI installation completed"
+    else
+      echo "AWS CLI is already installed"
+      aws --version
     fi
 
-    # install Q Developer CLI
-    if [ ! -d "q" ]; then
-      curl "https://desktop-release.q.us-east-1.amazonaws.com/latest/q-x86_64-linux-musl.zip" -o "q.zip"
-      unzip q.zip
-      ./q/install.sh --global --no-confirm
-      rm q.zip
-    fi
-
-    # install AWS CDK
-    if ! command -v cdk &> /dev/null; then
-      echo "Installing AWS CDK..."
-      # Install Node.js and npm (required for CDK)
+    # install Node.js and npm (required for CDK, LaunchDarkly MCP, and Kiro CLI)
+    if ! command -v node &> /dev/null; then
+      echo "Installing Node.js..."
       # Add NodeSource repository for the latest LTS version
       curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
       sudo apt-get install nodejs -y
-      sudo npm install -g npm@11.3.0
-
+      
       # Verify installation
       node -v
       npm -v
+      
+      echo "Node.js installation completed"
+    else
+      echo "Node.js is already installed"
+      node -v
+    fi
 
-      # Install AWS CDK globally
-      sudo npm install -g aws-cdk
+    # install AWS CDK to persistent location
+    if ! command -v cdk &> /dev/null; then
+      echo "Installing AWS CDK..."
+      
+      # Configure npm to use home directory for global packages
+      mkdir -p $HOME/.npm-global
+      npm config set prefix "$HOME/.npm-global"
+      
+      # Install AWS CDK to home directory
+      npm install -g aws-cdk
+      
+      # Create symlink in bin directory
+      ln -sf $HOME/.npm-global/bin/cdk $HOME/.local/bin/cdk
       
       # Verify CDK installation
       cdk --version
@@ -192,6 +221,67 @@ resource "coder_agent" "dev" {
       cdk --version
     fi
 
+    # install Kiro CLI to persistent location
+    if ! command -v kiro-cli &> /dev/null; then
+      echo "Installing Kiro CLI..."
+      curl -fsSL https://cli.kiro.dev/install | bash
+      
+      # Verify Kiro CLI installation
+      kiro-cli version
+      
+      echo "Kiro CLI installation completed"
+    else
+      echo "Kiro CLI is already installed"
+      kiro-cli version
+    fi
+
+    # Install uv (Python package manager) which includes uvx for MCP servers
+    if [ ! -f "$HOME/.local/bin/uv" ]; then
+      echo "Installing uv/uvx..."
+      UV_UNMANAGED_INSTALL="$HOME/.local/bin" curl -LsSf https://astral.sh/uv/install.sh | sh
+      echo "uv/uvx installation completed"
+    else
+      echo "uv/uvx is already installed"
+    fi
+    
+    # Configure Kiro CLI MCP servers
+    echo "Configuring Kiro CLI MCP servers..."
+    mkdir -p $HOME/.kiro/settings
+    
+    # Create MCP configuration file here
+    # cat > $HOME/.kiro/settings/mcp.json <<'MCP_EOF'
+    # MCP_EOF
+    
+    echo "Kiro CLI MCP configuration completed"
+    
+    # Configure workspace trust settings for Kiro IDE
+    echo "Configuring Kiro IDE workspace trust..."
+    mkdir -p $HOME/.local/share/code-server/User
+    
+    # Create or update settings.json to trust the home folder
+    cat > $HOME/.local/share/code-server/User/settings.json <<'SETTINGS_EOF'
+    {
+      "security.workspace.trust.enabled": true,
+      "security.workspace.trust.startupPrompt": "never",
+      "security.workspace.trust.emptyWindow": false,
+      "security.workspace.trust.untrustedFiles": "open"
+    }
+    SETTINGS_EOF
+    
+    # Add trusted folders configuration
+    mkdir -p $HOME/.kiro/settings
+    cat > $HOME/.kiro/settings/trusted-workspaces.json <<'TRUST_EOF'
+    {
+      "trustedFolders": [
+      "/home/coder"
+      ]
+    }
+    TRUST_EOF
+    
+    echo "Kiro IDE workspace trust configuration completed"
+    
+    #Symlink Coder Agent
+    ln -sf /tmp/coder.*/coder "$CODER_SCRIPT_BIN_DIR/coder" 
   EOT
 
   metadata {
@@ -217,17 +307,36 @@ resource "coder_agent" "dev" {
   }
 }
 
-# See https://registry.coder.com/modules/code-server
+module "coder-login" {
+    source   = "registry.coder.com/coder/coder-login/coder"
+    version  = "1.1.0"
+    agent_id = coder_agent.dev.id
+}
+
 module "code-server" {
-  count  = data.coder_workspace.me.start_count
-  source = "registry.coder.com/modules/code-server/coder"
+    source   = "registry.coder.com/coder/code-server/coder"
+    version  = "1.3.1"
+    agent_id       = coder_agent.dev.id
+    folder         = local.home_folder
+    subdomain = false
+    order = 0
+}
 
-  # This ensures that the latest version of the module gets downloaded, you can also pin the module version to prevent breaking changes in production.
-  version = ">= 1.0.0"
-  install_version = "4.96.1"
+module "kiro" {
+    source   = "registry.coder.com/coder/kiro/coder"
+    version  = "1.1.0"
+    agent_id = coder_agent.dev.id
+    order = 1
+}
 
-  agent_id = coder_agent.dev[0].id
-  order    = 1
+resource "coder_app" "kiro_cli" {
+    agent_id     = coder_agent.dev.id
+    slug         = "kiro-auth"
+    display_name = "Kiro CLI"
+    icon         = "${data.coder_workspace.me.access_url}/icon/kiro.svg"
+    command      = "kiro-cli"
+    share        = "owner"
+    order        = 2
 }
 
 locals {
