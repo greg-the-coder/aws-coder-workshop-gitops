@@ -336,17 +336,6 @@ module "kiro" {
     order = 1
 }
 
-resource "coder_app" "kiro_cli" {
-    count        = data.coder_workspace.me.start_count
-    agent_id     = coder_agent.dev[0].id
-    slug         = "kiro-auth"
-    display_name = "Kiro CLI"
-    icon         = "${data.coder_workspace.me.access_url}/icon/kiro.svg"
-    command      = "kiro-cli"
-    share        = "owner"
-    order        = 2
-}
-
 locals {
   hostname   = lower(data.coder_workspace.me.name)
   linux_user = "coder"
