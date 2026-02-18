@@ -36,6 +36,7 @@ provider "coderd" {
 # Maintain Coder Template Resources in this Section
 ###########################################################
 
+
 resource "coderd_template" "awshp-k8s-with-claude-code" {
   name        = "awshp-k8s-base-claudecode"
   display_name = "AWS Workshop - Kubernetes with Claude Code"
@@ -53,52 +54,54 @@ resource "coderd_template" "awshp-k8s-with-claude-code" {
   }]
 }
 
-resource "coderd_template" "awshp-linux-q-base" {
-  name        = "awshp-linux-q-base"
-  display_name = "AWS Workshop - EC2 (Linux) Q Developer with AI"
-  description = "Provision AWS EC2 VMs as Q Developer enabled Coder workspaces"
-  icon = "/icon/aws.png"
+resource "coderd_template" "awshp-k8s-with-kiro_cli" {
+  name        = "awshp-k8s-base-kirocli"
+  display_name = "AWS Workshop - Kubernetes with Kiro CLI"
+  description = "Provision Kubernetes Deployments as Coder workspaces with Kiro CLI Agent."
+  icon = "/icon/k8s.png"
   versions = [{
-    directory = "./awshp-linux-q-base"
+    directory = "./awshp-k8s-with-kiro-cli"
     active    = true
     # Version name is optional
     name = var.coder_gitsha
     tf_vars = [{
-      name  = "aws_iam_profile"
-      value = "coder-workshop-ec2-workspace-profile"
+      name  = "namespace"
+      value = "coder"
     }]
   }]
 }
 
-resource "coderd_template" "awshp-linux-sam" {
-  name        = "awshp-linux-sam"
-  display_name = "AWS Workshop - EC2 (Linux) SAM"
-  description = "Provision AWS EC2 ARM64 VMs as Serverless Development Coder workspaces"
-  icon = "/icon/aws.png"
-  versions = [{
-    directory = "./awshp-linux-sam"
-    active    = true
-    # Version name is optional
-    name = var.coder_gitsha
-    tf_vars = [{
-      name  = "aws_iam_profile"
-      value = "coder-workshop-ec2-workspace-profile"
-    }]
-  }]
-}
+# Uncomment for EC2/Graviton ARM + Serverless Workspace
+#resource "coderd_template" "awshp-linux-sam" {
+#  name        = "awshp-linux-sam"
+#  display_name = "AWS Workshop - EC2 (Linux) SAM"
+#  description = "Provision AWS EC2 ARM64 VMs as Serverless Development Coder workspaces"
+#  icon = "/icon/aws.png"
+#  versions = [{
+#    directory = "./awshp-linux-sam"
+#    active    = true
+#    # Version name is optional
+#    name = var.coder_gitsha
+#    tf_vars = [{
+#      name  = "aws_iam_profile"
+#      value = "coder-workshop-ec2-workspace-profile"
+#    }]
+#  }]
+#}
 
-resource "coderd_template" "awshp-windows-dcv" {
-  name        = "awshp-windows-dcv"
-  display_name = "AWS Workshop EC2 (Windows) DCV"
-  description = "Provision AWS EC2 Windows VMs as Coder workspaces accessible via browser using Amazon DCV"
-  icon = "/icon/aws.png"
-  versions = [{
-    directory = "./awshp-windows-dcv"
-    active    = true
-    # Version name is optional
-    name = var.coder_gitsha
-  }]
-}
+# Uncomment for EC2/Windows Development Desktop Workspace
+#resource "coderd_template" "awshp-windows-dcv" {
+#  name        = "awshp-windows-dcv"
+#  display_name = "AWS Workshop EC2 (Windows) DCV"
+#  description = "Provision AWS EC2 Windows VMs as Coder workspaces accessible via browser using Amazon DCV"
+#  icon = "/icon/aws.png"
+#  versions = [{
+#    directory = "./awshp-windows-dcv"
+#    active    = true
+#    # Version name is optional
+#    name = var.coder_gitsha
+#  }]
+#}
 
 resource "coderd_template" "awshp-k8s-rag-with-claude-code" {
   name        = "awshp-k8s-rag-with-claude-code"
