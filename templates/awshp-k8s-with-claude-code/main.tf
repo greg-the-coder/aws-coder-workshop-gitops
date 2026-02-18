@@ -75,6 +75,9 @@ locals {
     - You must ALWAYS ask the user for permission to push it. 
     - You are NOT allowed to push templates OR create workspaces from them without the users explicit approval.
 
+    If you're being tasked to create additional Coder tasks, ALWAYS use `coder task create` instead of `coder create`.
+    - Example: coder task create --template "awshp-k8s-with-claude-code" "<your prompt here>"
+
     When reporting URLs to Coder, report to "https://preview--dev--${data.coder_workspace.me.name}--${data.coder_workspace_owner.me.name}.${local.domain}/" that proxies port ${local.port}
   EOT
 }
@@ -126,15 +129,6 @@ data "coder_parameter" "disk_size" {
   default   = 30
   order     = 3
 }
-
-#data "coder_parameter" "ai_prompt" {
-#    type        = "string"
-#    name        = "AI Prompt"
-#    icon        = "/emojis/1f4ac.png"
-#    description = "Write a task prompt for Claude. This will be the first action it will attempt to finish."
-#    default = "Do nothing but report a 'task completed' update to Coder"
-#    mutable     = false
-#}
 
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
