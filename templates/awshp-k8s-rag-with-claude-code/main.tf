@@ -80,7 +80,7 @@ data "coder_parameter" "memory" {
 data "coder_parameter" "disk_size" {
   name        = "PVC storage size"
   type        = "number"
-  description = "Number of GB of storage for '${local.home_folder}'! This will persist after the workspace's K8s Pod is shutdown or deleted."
+  description = "Number of GB of storage for '${local.home_dir}'! This will persist after the workspace's K8s Pod is shutdown or deleted."
   icon        = "https://www.pngall.com/wp-content/uploads/5/Database-Storage-PNG-Clipart.png"
   validation {
     min       = 10
@@ -106,56 +106,59 @@ data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 
 locals {
-    cost = 2
-    home_folder = "/home/coder"
-}
+  home_dir    = "/home/coder"
+  bin_path    = "/home/coder/.local/bin:/home/coder/bin:/home/coder/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  cost        = 2
+  port        = 8501
+  domain      = element(split("/", data.coder_workspace.me.access_url), -1)
+  
+  # Database configuration
+  db_username = "dbadmin"
+  db_password = "YourStrongPasswordHere1"
+  db_name     = "mydb1"
+  db_port     = "5432"
+  
+  task_prompt = join(" ", [
+    "First, post a 'task started' update to Coder.",
+    "Then, review all of your memory.",
+    "Finally, ${data.coder_parameter.ai_prompt.value}.",
+  ])
+  
+  system_prompt = <<-EOT
+    Hey! First, report an initial task to Coder to show you have started! The user has provided you with a prompt of something to create. Create it the best you can, and keep it as succinct as possible.
+    
+    If you're being tasked to create a web application, then:
+    - ALWAYS start the server using `python3` or `node` on localhost:${local.port}.
+    - BEFORE starting the server, ALWAYS attempt to kill ANY process using port ${local.port}, and then run the dev server on port ${local.port}.
+    - ALWAYS build the project using dev servers (and ALWAYS VIA desktop-commander)
+    - When finished, you should use Playwright to review the HTML to ensure it is working as expected.
 
-locals {
-    port = 8501
-    domain = element(split("/", data.coder_workspace.me.access_url), -1)
-}
+    ALWAYS run long-running commands (e.g. `pnpm dev` or `npm run dev`) using desktop-commander so it runs it in the background and users can prompt you.  Other short-lived commands (build, test, cd, write, read, view, etc) can run normally.
 
-locals {
-    task_prompt = join(" ", [
-        "First, post a 'task started' update to Coder.",
-        "Then, review all of your memory.",
-        "Finally, ${data.coder_parameter.ai_prompt.value}.",
-    ])
-    system_prompt = <<-EOT
-        Hey! First, report an initial task to Coder to show you have started! The user has provided you with a prompt of something to create. Create it the best you can, and keep it as succinct as possible.
-        
-        If you're being tasked to create a web application, then:
-        - ALWAYS start the server using `python3` or `node` on localhost:${local.port}.
-        - BEFORE starting the server, ALWAYS attempt to kill ANY process using port ${local.port}, and then run the dev server on port ${local.port}.
-        - ALWAYS build the project using dev servers (and ALWAYS VIA desktop-commander)
-        - When finished, you should use Playwright to review the HTML to ensure it is working as expected.
+    NEVER run the dev server without desktop-commander.
 
-        ALWAYS run long-running commands (e.g. `pnpm dev` or `npm run dev`) using desktop-commander so it runs it in the background and users can prompt you.  Other short-lived commands (build, test, cd, write, read, view, etc) can run normally.
+    For previewing, always use the dev server for fast feedback loops (never do a full Next.js build, for exmaple). A simple HTML/static is preferred for web applications, but pick the best AND lightest framework for the job.
+    
+    The dev server will ALWAYS be on localhost:${local.port} and NEVER start on another port. If the dev server crashes for some reason, kill port ${local.port} (or the desktop-commander session) and restart the dev server.
 
-        NEVER run the dev server without desktop-commander.
+    After large changes, use Playwright to ensure your changes work (preview localhost:${local.port}). Take a screenshot, look at the screenshot. Also look at the HTML output from Playwright. If there are errors or something looks "off," fix it.
+    
+    Aim to autonomously investigate and solve issues the user gives you and test your work, whenever possible.
+    
+    Avoid shortcuts like mocking tests. When you get stuck, you can ask the user but opt for autonomy.
+    
+    In your task reports to Coder:
+    - Be specific about what you're doing
+    - Clearly indicate what information you need from the user when in "failure" state
+    - Keep it under 160 characters
+    - Make it actionable
 
-        For previewing, always use the dev server for fast feedback loops (never do a full Next.js build, for exmaple). A simple HTML/static is preferred for web applications, but pick the best AND lightest framework for the job.
-        
-        The dev server will ALWAYS be on localhost:${local.port} and NEVER start on another port. If the dev server crashes for some reason, kill port ${local.port} (or the desktop-commander session) and restart the dev server.
+    If you're being tasked to create a Coder template, then,
+    - You must ALWAYS ask the user for permission to push it. 
+    - You are NOT allowed to push templates OR create workspaces from them without the users explicit approval.
 
-        After large changes, use Playwright to ensure your changes work (preview localhost:${local.port}). Take a screenshot, look at the screenshot. Also look at the HTML output from Playwright. If there are errors or something looks "off," fix it.
-        
-        Aim to autonomously investigate and solve issues the user gives you and test your work, whenever possible.
-        
-        Avoid shortcuts like mocking tests. When you get stuck, you can ask the user but opt for autonomy.
-        
-        In your task reports to Coder:
-        - Be specific about what you're doing
-        - Clearly indicate what information you need from the user when in "failure" state
-        - Keep it under 160 characters
-        - Make it actionable
-
-        If you're being tasked to create a Coder template, then,
-        - You must ALWAYS ask the user for permission to push it. 
-        - You are NOT allowed to push templates OR create workspaces from them without the users explicit approval.
-
-        When reporting URLs to Coder, report to "https://preview--dev--${data.coder_workspace.me.name}--${data.coder_workspace_owner.me.name}.${local.domain}/" that proxies port ${local.port}
-    EOT
+    When reporting URLs to Coder, report to "https://preview--dev--${data.coder_workspace.me.name}--${data.coder_workspace_owner.me.name}.${local.domain}/" that proxies port ${local.port}
+  EOT
 }
 
 resource "coder_env" "bedrock_use" {
@@ -167,19 +170,19 @@ resource "coder_env" "bedrock_use" {
 resource "coder_env" "path" {
   agent_id = coder_agent.dev.id
   name     = "PATH"
-  value    = "/home/coder/.local/bin:/home/coder/bin:/home/coder/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  value    = local.bin_path
 }
 
 resource "coder_env" "pgvector_user" {
   agent_id = coder_agent.dev.id
   name     = "PGVECTOR_USER"
-  value    = "dbadmin"
+  value    = local.db_username
 }
 
 resource "coder_env" "pgvector_password" {
   agent_id = coder_agent.dev.id
   name     = "PGVECTOR_PASSWORD"
-  value    = "YourStrongPasswordHere1"
+  value    = local.db_password
 }
 
 resource "coder_env" "pgvector_host" {
@@ -191,19 +194,19 @@ resource "coder_env" "pgvector_host" {
 resource "coder_env" "pgvector_port" {
   agent_id = coder_agent.dev.id
   name     = "PGVECTOR_PORT"
-  value    = "5432"
+  value    = local.db_port
 }
 
 resource "coder_env" "pgvector_database" {
   agent_id = coder_agent.dev.id
   name     = "PGVECTOR_DATABASE"
-  value    = "mydb1"
+  value    = local.db_name
 }
 
 resource "coder_agent" "dev" {
     arch = "amd64"
     os = "linux"
-    dir = local.home_folder
+    dir = local.home_dir
     display_apps {
         vscode          = false
         vscode_insiders = false
@@ -243,7 +246,7 @@ module "code-server" {
     source   = "registry.coder.com/coder/code-server/coder"
     version  = "1.3.1"
     agent_id       = coder_agent.dev.id
-    folder         = local.home_folder
+    folder         = local.home_dir
     subdomain = false
     order = 0
 }
@@ -261,7 +264,7 @@ module "claude-code" {
     version             = "4.7.1"
     model               = var.anthropic_model
     agent_id            = coder_agent.dev.id
-    workdir             = local.home_folder
+    workdir             = local.home_dir
     subdomain           = false
     ai_prompt           = local.task_prompt
     system_prompt       = local.system_prompt
@@ -348,7 +351,7 @@ module "claude-code" {
     ln -sf /tmp/coder.*/coder "$CODER_SCRIPT_BIN_DIR/coder" 
    
     # Enable Vector extension on Aurora PostgreSQL instance
-    PGPASSWORD="YourStrongPasswordHere1" psql -h ${module.aurora-pgvector.aurora_postgres_1_endpoint} -U dbadmin -d mydb1 -c "CREATE EXTENSION IF NOT EXISTS vector;"
+    PGPASSWORD="${local.db_password}" psql -h ${module.aurora-pgvector.aurora_postgres_1_endpoint} -U ${local.db_username} -d ${local.db_name} -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
     EOF
 
@@ -503,7 +506,7 @@ resource "kubernetes_deployment" "dev" {
             }
           }
           volume_mount {
-            mount_path = "/home/coder"
+            mount_path = local.home_dir
             name       = "home"
             read_only  = false
           }
@@ -546,9 +549,9 @@ module "aurora-pgvector" {
 
   workspace_name     = data.coder_workspace.me.name
   eks_cluster_name   = var.eks_cluster_name
-  db_master_username = "dbadmin"
-  db_master_password = "YourStrongPasswordHere1"
-  database_name      = "mydb1"
+  db_master_username = local.db_username
+  db_master_password = local.db_password
+  database_name      = local.db_name
   postgresql_version = var.postgresql_version
 }
 
