@@ -138,7 +138,6 @@ data "coder_parameter" "disk_size" {
 
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
-data "coder_task" "me" {}
 
 resource "coder_env" "bedrock_use" {
   agent_id = coder_agent.dev.id
