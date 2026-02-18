@@ -21,22 +21,9 @@ variable "namespace" {
   default     = "coder"
 }
 
-variable "mcp_bearer_token_pulumi" {
-  type        = string
-  description = "Your Pulumi MCP bearer token. This provides access to Pulumi MCP Server via Kiro CLI."
-  sensitive   = true
-  default     = "pul-xxxx-xxx-xxxx"
-}
-
-variable "mcp_bearer_token_launchdarkly" {
-  type        = string
-  description = "Your LaunchDarkly MCP API Key. This provides access to LaunchDarkly MCP Server via Kiro CLI."
-  sensitive   = true
-  default     = "api-xxxx-xxx-xxxx"
-}
-
 locals {
-  home_dir        = "/home/coder"
+  home_dir = "/home/coder"
+  bin_path = "/home/coder/.local/bin:/home/coder/bin:/home/coder/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 }
 
 # Minimum vCPUs needed 
@@ -92,15 +79,14 @@ data "coder_workspace_owner" "me" {}
 
 locals {
     cost = 2
-    home_folder = "/home/coder"
 }
 
 resource "coder_agent" "dev" {
     arch = "amd64"
     os = "linux"
-    dir = local.home_folder
+    dir = local.home_dir
     env = {
-        PATH = "/home/coder/.local/bin:/home/coder/bin:/home/coder/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        PATH = local.bin_path
     }
     display_apps {
         vscode          = false
@@ -143,7 +129,7 @@ resource "coder_agent" "dev" {
       aws --version
     fi
 
-    # install Node.js and npm (required for CDK, LaunchDarkly MCP, and Kiro CLI)
+    # install Node.js and npm (required for CDK and Kiro CLI)
     if ! command -v node &> /dev/null; then
       echo "Installing Node.js..."
       # Add NodeSource repository for the latest LTS version
@@ -205,50 +191,14 @@ resource "coder_agent" "dev" {
     else
       echo "uv/uvx is already installed"
     fi
-
-    # Install Nirmata CLI
-    if ! command -v nctl &> /dev/null; then
-      export NCTL_VERSION=4.10.7-rc.3
-      curl -LO https://dl.nirmata.io/nctl/nctl_$NCTL_VERSION/nctl_$NCTL_VERSION\_linux_amd64.zip
-      curl -LO https://dl.nirmata.io/nctl/nctl_$NCTL_VERSION/nctl_$NCTL_VERSION\_linux_amd64.zip.asc
-      export GNUPGHOME="$(mktemp -d)"
-      gpg --keyserver keys.openpgp.org --recv-key 7CEE8D12BCFE419B55A5D66A4F71AE57094A908B
-      gpg --batch --verify nctl_$NCTL_VERSION\_linux_amd64.zip.asc nctl_$NCTL_VERSION\_linux_amd64.zip
-      unzip -o nctl_$NCTL_VERSION\_linux_amd64.zip
-      chmod u+x nctl
-      sudo mv nctl $HOME/.local/bin/nctl
-      nctl version
-    fi
     
     # Configure Kiro CLI MCP servers
     echo "Configuring Kiro CLI MCP servers..."
     mkdir -p $HOME/.kiro/settings
     
     # Create MCP configuration file
-    cat > $HOME/.kiro/settings/mcp.json <<'MCP_EOF'
-{
-  "mcpServers": {
-    "pulumi": {
-      "headers": {
-        "Authorization": "Bearer ${var.mcp_bearer_token_pulumi}"
-      },
-      "type": "http",
-      "url": "https://mcp.ai.pulumi.com/mcp"
-    },
-    "LaunchDarkly": {
-      "command": "npx",
-      "args": [
-        "-y", "--package", "@launchdarkly/mcp-server", "--", "mcp", "start",
-        "--api-key", "${var.mcp_bearer_token_launchdarkly}"
-      ]
-    },
-    "arize-tracing-assistant": {
-      "command": "$HOME/.local/bin/uvx",
-      "args": ["arize-tracing-assistant@latest"]
-    }
-  }
-}
-MCP_EOF
+    #cat > $HOME/.kiro/settings/mcp.json <<'MCP_EOF'
+    #MCP_EOF
     
     echo "Kiro CLI MCP configuration completed"
     
@@ -258,23 +208,23 @@ MCP_EOF
     
     # Create or update settings.json to trust the home folder
     cat > $HOME/.local/share/code-server/User/settings.json <<'SETTINGS_EOF'
-{
-  "security.workspace.trust.enabled": true,
-  "security.workspace.trust.startupPrompt": "never",
-  "security.workspace.trust.emptyWindow": false,
-  "security.workspace.trust.untrustedFiles": "open"
-}
-SETTINGS_EOF
+    {
+      "security.workspace.trust.enabled": true,
+      "security.workspace.trust.startupPrompt": "never",
+      "security.workspace.trust.emptyWindow": false,
+      "security.workspace.trust.untrustedFiles": "open"
+    }
+    SETTINGS_EOF
     
     # Add trusted folders configuration
     mkdir -p $HOME/.kiro/settings
     cat > $HOME/.kiro/settings/trusted-workspaces.json <<'TRUST_EOF'
-{
-  "trustedFolders": [
-    "/home/coder"
-  ]
-}
-TRUST_EOF
+    {
+      "trustedFolders": [
+        "/home/coder"
+      ]
+    }
+    TRUST_EOF
     
     echo "Kiro IDE workspace trust configuration completed"
     
@@ -295,7 +245,7 @@ module "code-server" {
     source   = "registry.coder.com/coder/code-server/coder"
     version  = "1.3.1"
     agent_id       = coder_agent.dev.id
-    folder         = local.home_folder
+    folder         = local.home_dir
     subdomain = false
     order = 0
 }
@@ -431,7 +381,7 @@ resource "kubernetes_deployment" "dev" {
             }
           }
           volume_mount {
-            mount_path = "/home/coder"
+            mount_path = local.home_dir
             name       = "home"
             read_only  = false
           }
