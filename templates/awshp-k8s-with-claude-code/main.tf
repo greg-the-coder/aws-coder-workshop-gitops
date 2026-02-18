@@ -27,6 +27,8 @@ variable "anthropic_model" {
   default     = "global.anthropic.claude-opus-4-5-20251101-v1:0"
 }
 
+data "coder_task" "me" {}
+
 locals {
   home_dir = "/home/coder"
   bin_path = "/home/coder/.local/bin:/home/coder/bin:/home/coder/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -37,7 +39,7 @@ locals {
   task_prompt = join(" ", [
     "First, post a 'task started' update to Coder.",
     "Then, review all of your memory.",
-    "Finally, ${data.coder_parameter.ai_prompt.value}.",
+    "Finally, ${data.coder_task.me.prompt.value}.",
   ])
   
   system_prompt = <<-EOT
@@ -125,17 +127,18 @@ data "coder_parameter" "disk_size" {
   order     = 3
 }
 
-data "coder_parameter" "ai_prompt" {
-    type        = "string"
-    name        = "AI Prompt"
-    icon        = "/emojis/1f4ac.png"
-    description = "Write a task prompt for Claude. This will be the first action it will attempt to finish."
-    default = "Do nothing but report a 'task completed' update to Coder"
-    mutable     = false
-}
+#data "coder_parameter" "ai_prompt" {
+#    type        = "string"
+#    name        = "AI Prompt"
+#    icon        = "/emojis/1f4ac.png"
+#    description = "Write a task prompt for Claude. This will be the first action it will attempt to finish."
+#    default = "Do nothing but report a 'task completed' update to Coder"
+#    mutable     = false
+#}
 
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
+data "coder_task" "me" {}
 
 resource "coder_env" "bedrock_use" {
   agent_id = coder_agent.dev.id
