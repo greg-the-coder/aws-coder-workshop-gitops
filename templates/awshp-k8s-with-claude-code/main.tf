@@ -39,7 +39,7 @@ locals {
   task_prompt = join(" ", [
     "First, post a 'task started' update to Coder.",
     "Then, review all of your memory.",
-    "Finally, ${data.coder_task.me.prompt.value}.",
+    "Finally, ${data.coder_task.me.prompt}.",
   ])
   
   system_prompt = <<-EOT
