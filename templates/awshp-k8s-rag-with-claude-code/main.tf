@@ -5,8 +5,8 @@ terraform {
             version = "2.37.1"
         }
         coder = {
-            source = "coder/coder"
-            version = "2.8.0"
+            source  = "coder/coder"
+            version = ">= 2.13"
         }
         random = {
             source = "hashicorp/random"
@@ -45,10 +45,6 @@ variable "postgresql_version" {
   default     = "16.8"
 }
 
-locals {
-  home_dir        = "/home/coder"
-}
-
 # Minimum vCPUs needed 
 data "coder_parameter" "cpu" {
   name        = "CPU cores"
@@ -81,10 +77,10 @@ data "coder_parameter" "memory" {
   order     = 2
 }
 
-data "coder_parameter" "home_disk_size" {
+data "coder_parameter" "disk_size" {
   name        = "PVC storage size"
   type        = "number"
-  description = "Number of GB of storage for '${local.home_dir}'! This will persist after the workspace's K8s Pod is shutdown or deleted."
+  description = "Number of GB of storage for '${local.home_folder}'! This will persist after the workspace's K8s Pod is shutdown or deleted."
   icon        = "https://www.pngall.com/wp-content/uploads/5/Database-Storage-PNG-Clipart.png"
   validation {
     min       = 10
@@ -93,7 +89,7 @@ data "coder_parameter" "home_disk_size" {
   }
   form_type = "slider"
   mutable   = true
-  default   = 10
+  default   = 30
   order     = 3
 }
 
@@ -109,158 +105,9 @@ data "coder_parameter" "ai_prompt" {
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 
-resource "coder_agent" "dev" {
-    arch = "amd64"
-    os = "linux"
-    dir = local.home_dir
-  startup_script = <<-EOT
-    set -e
-    sudo apt update
-    sudo apt install -y curl unzip postgresql-client telnet
-
-    # install AWS CLI
-    if [ ! -d "aws" ]; then
-      curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-      unzip awscliv2.zip
-      sudo ./aws/install
-      aws --version
-      rm awscliv2.zip
-    fi
-
-    # install AWS CDK
-    if ! command -v cdk &> /dev/null; then
-      echo "Installing AWS CDK..."
-      # Install Node.js and npm (required for CDK)
-      # Add NodeSource repository for the latest LTS version
-      curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-      sudo apt-get install nodejs -y
-      sudo npm install -g npm@11.3.0
-
-      # Verify installation
-      node -v
-      npm -v
-
-      # Install AWS CDK globally
-      sudo npm install -g aws-cdk
-      
-      # Verify CDK installation
-      cdk --version
-      
-      echo "AWS CDK installation completed"
-    else
-      echo "AWS CDK is already installed"
-      cdk --version
-    fi
-   
-    # Enable Vector extension on Aurora PostgreSQL instance
-    PGPASSWORD="YourStrongPasswordHere1" psql -h ${module.aurora-pgvector.aurora_postgres_1_endpoint} -U dbadmin -d mydb1 -c "CREATE EXTENSION IF NOT EXISTS vector;"
-
-  EOT
-
-    env = {
-        CODER_MCP_CLAUDE_TASK_PROMPT        = local.task_prompt
-        CODER_MCP_CLAUDE_SYSTEM_PROMPT      = local.system_prompt
-        CLAUDE_CODE_USE_BEDROCK = "1"
-        ANTHROPIC_MODEL = var.anthropic_model
-        ANTHROPIC_SMALL_FAST_MODEL = var.anthropic_small_fast_model
-        CODER_MCP_APP_STATUS_SLUG = "claude-code"
-        PGVECTOR_USER = "dbadmin"
-        PGVECTOR_PASSWORD = "YourStrongPasswordHere1"
-        PGVECTOR_HOST = module.aurora-pgvector.aurora_postgres_1_endpoint
-        PGVECTOR_PORT = "5432"
-        PGVECTOR_DATABASE = "mydb1"
-    }
-    display_apps {
-        vscode          = false
-        vscode_insiders = false
-        web_terminal    = true
-        ssh_helper      = false
-    }
-}
-
-module "coder-login" {
-    source   = "registry.coder.com/coder/coder-login/coder"
-    version  = "1.1.0"
-    agent_id = coder_agent.dev.id
-}
-
-# Prompt the user for the git repo URL
-data "coder_parameter" "git_repo" {
-  name         = "git_repo"
-  display_name = "Git repository"
-  default      = "https://github.com/greg-the-coder/aws-rag-prototyping.git"
-}
-
-# Clone the repository 
-module "git_clone" {
-  count    = data.coder_workspace.me.start_count
-  source   = "registry.coder.com/coder/git-clone/coder"
-  version  = "1.2.0"
-  agent_id = coder_agent.dev.id
-  url      = data.coder_parameter.git_repo.value
-}
-
-# Create a code-server instance for the cloned repository
-module "code-server" {
-  count      = data.coder_workspace.me.start_count
-  source     = "registry.coder.com/coder/code-server/coder"
-  version    = "1.3.1"
-  agent_id   = coder_agent.dev.id
-  order      = 1
-  folder     = local.home_dir
-  subdomain  = false
-}
-
-module "claude-code" {
-    count               = data.coder_workspace.me.start_count
-    source              = "registry.coder.com/coder/claude-code/coder"
-    version             = "2.2.0"
-    agent_id            = coder_agent.dev.id
-    folder              = local.home_dir
-    subdomain           = false
-
-    install_claude_code = true
-    order               = 999
-
-    experiment_report_tasks = true
-    experiment_pre_install_script = <<-EOF
-        # If user doesn't have a Github account or aren't 
-        # part of the coder-contrib organization, then they can use the `coder-contrib-bot` account.
-        if [ ! -z "$GH_USERNAME" ]; then
-            unset -v GIT_ASKPASS
-            unset -v GIT_SSH_COMMAND
-        fi
-    EOF
-}
-
-module "kiro" {
-  count    = data.coder_workspace.me.start_count
-  source   = "registry.coder.com/coder/kiro/coder"
-  version  = "1.1.0"
-  agent_id = coder_agent.dev.id
-  folder   = local.home_dir
-}
-
-resource "coder_app" "preview" {
-    agent_id     = coder_agent.dev.id
-    slug         = "preview"
-    display_name = "Preview your app"
-    icon         = "${data.coder_workspace.me.access_url}/emojis/1f50e.png"
-    url          = "http://localhost:8501"
-    share        = "authenticated"
-    subdomain    = false
-    open_in      = "tab"
-    order = 3
-    healthcheck {
-        url       = "http://localhost:8501/"
-        interval  = 5
-        threshold = 15
-    }
-}
-
 locals {
     cost = 2
-    region = "us-west-2"
+    home_folder = "/home/coder"
 }
 
 locals {
@@ -311,6 +158,237 @@ locals {
     EOT
 }
 
+resource "coder_env" "bedrock_use" {
+  agent_id = coder_agent.dev.id
+  name     = "CLAUDE_CODE_USE_BEDROCK"
+  value    = "1"
+}
+
+resource "coder_env" "path" {
+  agent_id = coder_agent.dev.id
+  name     = "PATH"
+  value    = "/home/coder/.local/bin:/home/coder/bin:/home/coder/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+}
+
+resource "coder_env" "pgvector_user" {
+  agent_id = coder_agent.dev.id
+  name     = "PGVECTOR_USER"
+  value    = "dbadmin"
+}
+
+resource "coder_env" "pgvector_password" {
+  agent_id = coder_agent.dev.id
+  name     = "PGVECTOR_PASSWORD"
+  value    = "YourStrongPasswordHere1"
+}
+
+resource "coder_env" "pgvector_host" {
+  agent_id = coder_agent.dev.id
+  name     = "PGVECTOR_HOST"
+  value    = module.aurora-pgvector.aurora_postgres_1_endpoint
+}
+
+resource "coder_env" "pgvector_port" {
+  agent_id = coder_agent.dev.id
+  name     = "PGVECTOR_PORT"
+  value    = "5432"
+}
+
+resource "coder_env" "pgvector_database" {
+  agent_id = coder_agent.dev.id
+  name     = "PGVECTOR_DATABASE"
+  value    = "mydb1"
+}
+
+resource "coder_agent" "dev" {
+    arch = "amd64"
+    os = "linux"
+    dir = local.home_folder
+    display_apps {
+        vscode          = false
+        vscode_insiders = false
+        web_terminal    = true
+        ssh_helper      = false
+    }
+    startup_script = <<-EOT
+    set -e
+
+    EOT
+
+}
+
+module "coder-login" {
+    source   = "registry.coder.com/coder/coder-login/coder"
+    version  = "1.1.0"
+    agent_id = coder_agent.dev.id
+}
+
+# Prompt the user for the git repo URL
+data "coder_parameter" "git_repo" {
+  name         = "git_repo"
+  display_name = "Git repository"
+  default      = "https://github.com/greg-the-coder/aws-rag-prototyping.git"
+}
+
+# Clone the repository 
+module "git_clone" {
+  count    = data.coder_workspace.me.start_count
+  source   = "registry.coder.com/coder/git-clone/coder"
+  version  = "1.2.0"
+  agent_id = coder_agent.dev.id
+  url      = data.coder_parameter.git_repo.value
+}
+
+module "code-server" {
+    source   = "registry.coder.com/coder/code-server/coder"
+    version  = "1.3.1"
+    agent_id       = coder_agent.dev.id
+    folder         = local.home_folder
+    subdomain = false
+    order = 0
+}
+
+module "kiro" {
+    source   = "registry.coder.com/coder/kiro/coder"
+    version  = "1.1.0"
+    agent_id = coder_agent.dev.id
+    order = 1
+}
+
+module "claude-code" {
+    count               = data.coder_workspace.me.start_count
+    source              = "registry.coder.com/coder/claude-code/coder"
+    version             = "4.7.1"
+    model               = var.anthropic_model
+    agent_id            = coder_agent.dev.id
+    workdir             = local.home_folder
+    subdomain           = false
+    ai_prompt           = local.task_prompt
+    system_prompt       = local.system_prompt
+    report_tasks        = true
+        
+    pre_install_script = <<-EOF
+    set -e    
+    
+    sudo apt update
+    sudo apt install -y curl unzip gnupg dirmngr postgresql-client telnet
+    
+    # Move cross module/workspace requirements into single place to avoid race conditions
+    
+    # Create persistent bin directory
+    mkdir -p $HOME/bin
+    mkdir -p $HOME/.local/bin
+    
+    # Update PATH for current session
+    export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+
+    # install Node.js and npm (required for CDK)
+    if ! command -v node &> /dev/null; then
+      echo "Installing Node.js..."
+      # Add NodeSource repository for the latest LTS version
+      curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+      sudo apt-get install nodejs -y
+      
+      # Verify installation
+      node -v
+      npm -v
+      
+      echo "Node.js installation completed"
+    else
+      echo "Node.js is already installed"
+      node -v
+    fi
+
+    # install AWS CLI to persistent location
+    if ! command -v aws &> /dev/null; then
+      echo "Installing AWS CLI..."
+      cd $HOME
+      curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      unzip -q awscliv2.zip
+      
+      # Install to home directory instead of system-wide
+      ./aws/install --install-dir $HOME/.local/aws-cli --bin-dir $HOME/.local/bin
+      
+      # Verify installation
+      aws --version
+      
+      # Cleanup
+      rm -rf aws awscliv2.zip
+      
+      echo "AWS CLI installation completed"
+    else
+      echo "AWS CLI is already installed"
+      aws --version
+    fi
+
+    # install AWS CDK to persistent location
+    if ! command -v cdk &> /dev/null; then
+      echo "Installing AWS CDK..."
+      
+      # Configure npm to use home directory for global packages
+      mkdir -p $HOME/.npm-global
+      npm config set prefix "$HOME/.npm-global"
+      
+      # Install AWS CDK to home directory
+      npm install -g aws-cdk
+      
+      # Create symlink in bin directory
+      ln -sf $HOME/.npm-global/bin/cdk $HOME/.local/bin/cdk
+      
+      # Verify CDK installation
+      cdk --version
+      
+      echo "AWS CDK installation completed"
+    else
+      echo "AWS CDK is already installed"
+      cdk --version
+    fi
+
+    #Symlink Coder Agent
+    ln -sf /tmp/coder.*/coder "$CODER_SCRIPT_BIN_DIR/coder" 
+   
+    # Enable Vector extension on Aurora PostgreSQL instance
+    PGPASSWORD="YourStrongPasswordHere1" psql -h ${module.aurora-pgvector.aurora_postgres_1_endpoint} -U dbadmin -d mydb1 -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+    EOF
+
+    post_install_script = <<-EOF
+
+    # Install uv (Python package manager) which includes uvx         
+    if [ ! -f "$HOME/.local/bin/uv" ]; then                          
+      UV_UNMANAGED_INSTALL="$HOME/.local/bin" curl -LsSf https://astral.sh/uv/install.sh | sh                             
+    fi   
+
+    # Add MCP Servers via claude cli
+    #claude mcp add <TBD>
+
+    EOF
+
+    order               = 999
+}
+
+resource "coder_ai_task" "claude-code" {
+    count  = data.coder_workspace.me.start_count
+    app_id = module.claude-code[0].task_app_id
+}
+
+resource "coder_app" "preview" {
+    agent_id     = coder_agent.dev.id
+    slug         = "preview"
+    display_name = "Preview your app"
+    icon         = "${data.coder_workspace.me.access_url}/emojis/1f50e.png"
+    url          = "http://localhost:${local.port}"
+    share        = "authenticated"
+    subdomain    = false
+    open_in      = "tab"
+    order = 3
+    healthcheck {
+        url       = "http://localhost:${local.port}/"
+        interval  = 5
+        threshold = 15
+    }
+}
+
 resource "kubernetes_persistent_volume_claim" "home" {
   metadata {
     name      = "coder-${data.coder_workspace.me.id}-home"
@@ -335,7 +413,7 @@ resource "kubernetes_persistent_volume_claim" "home" {
     access_modes = ["ReadWriteOnce"]
     resources {
       requests = {
-        storage = "${data.coder_parameter.home_disk_size.value}Gi"
+        storage = "${data.coder_parameter.disk_size.value}Gi"
       }
     }
   }
