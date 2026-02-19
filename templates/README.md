@@ -4,11 +4,11 @@ This directory contains Coder workspace templates designed for AWS development w
 
 ## Template Overview
 
-### 🐧 [AWS Workshop - EC2 (Linux) Kiro](awshp-linux-q-base/)
-**Purpose**: AI-powered development with Kiro  
-**Architecture**: Ubuntu 20.04 on x86_64 EC2 instances  
-**Key Tools**: Kiro CLI, AWS CLI v2, AWS CDK, Node.js 20 LTS  
-**Best For**: AI-assisted development, infrastructure as code, general AWS development
+### ☸️ [Kubernetes with Kiro CLI](awshp-k8s-with-kiro-cli/)
+**Purpose**: AI-powered development with Kiro CLI and MCP server support  
+**Architecture**: Kubernetes pods with persistent volumes  
+**Key Tools**: Kiro CLI, AWS CLI v2, AWS CDK, Node.js 20 LTS, uv/uvx for MCP servers  
+**Best For**: AI-assisted development, infrastructure as code, MCP server integration
 
 ### 🚀 [AWS Workshop - EC2 (Linux) SAM](awshp-linux-sam/)
 **Purpose**: Serverless application development  
@@ -25,8 +25,8 @@ This directory contains Coder workspace templates designed for AWS development w
 ### ☸️ [Kubernetes with Claude Code](awshp-k8s-with-claude-code/)
 **Purpose**: Container development with AI task automation  
 **Architecture**: Kubernetes pods with persistent volumes  
-**Key Tools**: Claude Code AI assistant, VS Code, Cursor, container tools  
-**Best For**: Microservices, container orchestration, AI-driven task automation
+**Key Tools**: Claude Code 4.7.1, AWS Bedrock, AWS CLI, AWS CDK, Node.js  
+**Best For**: AI-driven development, task automation, microservices, container orchestration
 
 ### 🤖 [RAG with Claude Code](awshp-k8s-rag-with-claude-code/)
 **Purpose**: RAG application prototyping with vector database  
@@ -36,29 +36,30 @@ This directory contains Coder workspace templates designed for AWS development w
 
 ## Template Comparison
 
-| Feature | Linux Kiro | Linux SAM | Windows DCV | K8s Claude Code | RAG Claude Code |
+| Feature | K8s Kiro CLI | Linux SAM | Windows DCV | K8s Claude Code | RAG Claude Code |
 |---------|------------------|-----------|-------------|-----------------|-----------------|
-| **Platform** | Ubuntu x86_64 | Ubuntu ARM64 | Windows Server | Kubernetes | Kubernetes |
-| **AI Assistant** | Kiro CLI | Kiro Extension | - | Claude Code | Claude Code |
+| **Platform** | Kubernetes | Ubuntu ARM64 | Windows Server | Kubernetes | Kubernetes |
+| **AI Assistant** | Kiro CLI + MCP | Kiro Extension | - | Claude Code | Claude Code |
 | **Primary Use** | General AWS Dev | Serverless | Windows Dev | Container Dev | RAG/AI Dev |
-| **Cost Efficiency** | Standard | High (ARM64) | Higher | Variable | Variable |
-| **Persistence** | Full VM | Full VM | Full VM | Home directory | Home directory |
-| **Startup Time** | ~2-3 min | ~2-3 min | ~5-10 min | ~30-60 sec | ~5-10 min |
+| **Cost Efficiency** | Variable | High (ARM64) | Higher | Variable | Variable |
+| **Persistence** | Home directory | Full VM | Full VM | Home directory | Home directory |
+| **Startup Time** | ~30-60 sec | ~2-3 min | ~5-10 min | ~30-60 sec | ~5-10 min |
 
 ## Getting Started
 
 ### Prerequisites
 - Coder deployment with AWS provider configured
 - AWS account with appropriate IAM permissions
-- For Kubernetes template: Existing Kubernetes cluster
+- For Kubernetes templates: Existing Kubernetes cluster
 
 ### Template Selection Guide
 
-**Choose Linux Kiro if you want:**
-- AI-powered development assistance
+**Choose Kubernetes with Kiro CLI if you want:**
+- AI-powered development assistance with MCP server support
 - Infrastructure as Code with CDK
-- General-purpose AWS development
-- x86_64 compatibility requirements
+- General-purpose AWS development on Kubernetes
+- Fast workspace startup times
+- Configurable MCP servers 
 
 **Choose Linux SAM if you want:**
 - Serverless application development
@@ -74,7 +75,7 @@ This directory contains Coder workspace templates designed for AWS development w
 
 **Choose Kubernetes Claude Code if you want:**
 - Container-based development
-- AI task automation
+- AI task automation with Claude Code
 - Microservices architecture
 - Fast workspace startup times
 
@@ -87,21 +88,24 @@ This directory contains Coder workspace templates designed for AWS development w
 ## Configuration
 
 ### IAM Instance Profile
-Most templates require an IAM instance profile for AWS service access. Configure the `aws_iam_profile` variable when deploying templates.
+EC2-based templates (Linux SAM, Windows DCV) require an IAM instance profile for AWS service access. Configure the `aws_iam_profile` variable when deploying templates.
+
+### Kubernetes Service Account
+Kubernetes-based templates use ServiceAccount with IAM role binding for AWS service access.
 
 ### Regional Deployment
 All templates support multi-region deployment with region-specific optimizations:
-- **Linux Kiro**: 10 regions globally
+- **Kubernetes Kiro CLI**: Depends on cluster location
 - **Linux SAM**: 4 US regions (ARM64 availability)
 - **Windows DCV**: 15 regions globally
-- **Kubernetes**: Depends on cluster location
-- **RAG**: Depends on cluster location + Aurora availability
+- **Kubernetes Claude Code**: Depends on cluster location
+- **RAG Claude Code**: Depends on cluster location + Aurora availability
 
 ### Resource Sizing
 Each template offers configurable resource options:
-- **CPU**: 1-8 vCPUs depending on template
-- **Memory**: 1-16 GiB RAM options
-- **Storage**: 10-300 GB persistent volumes
+- **CPU**: 2-8 vCPUs depending on template
+- **Memory**: 4-16 GiB RAM options
+- **Storage**: 10-50 GB persistent volumes (Kubernetes) or 10-300 GB (EC2)
 - **Database**: Aurora Serverless v2 (0.5-1.0 ACU for RAG template)
 
 ## Workshop Integration
