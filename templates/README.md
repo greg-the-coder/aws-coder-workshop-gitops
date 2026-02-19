@@ -4,16 +4,16 @@ This directory contains Coder workspace templates designed for AWS development w
 
 ## Template Overview
 
-### 🐧 [AWS Workshop - EC2 (Linux) Q Developer](awshp-linux-q-base/)
-**Purpose**: AI-powered development with Amazon Q Developer  
+### 🐧 [AWS Workshop - EC2 (Linux) Kiro](awshp-linux-q-base/)
+**Purpose**: AI-powered development with Kiro  
 **Architecture**: Ubuntu 20.04 on x86_64 EC2 instances  
-**Key Tools**: Amazon Q Developer CLI, AWS CLI v2, AWS CDK, Node.js 20 LTS  
+**Key Tools**: Kiro CLI, AWS CLI v2, AWS CDK, Node.js 20 LTS  
 **Best For**: AI-assisted development, infrastructure as code, general AWS development
 
 ### 🚀 [AWS Workshop - EC2 (Linux) SAM](awshp-linux-sam/)
 **Purpose**: Serverless application development  
 **Architecture**: Ubuntu ARM64 on Graviton EC2 instances  
-**Key Tools**: AWS SAM CLI, AWS CLI v2, Python 3, Amazon Q Developer extension  
+**Key Tools**: AWS SAM CLI, AWS CLI v2, Python 3, Kiro extension  
 **Best For**: Lambda functions, serverless APIs, cost-effective ARM64 development
 
 ### 🪟 [AWS Workshop - EC2 (Windows) DCV](awshp-windows-dcv/)
@@ -36,10 +36,10 @@ This directory contains Coder workspace templates designed for AWS development w
 
 ## Template Comparison
 
-| Feature | Linux Q Developer | Linux SAM | Windows DCV | K8s Claude Code | RAG Claude Code |
+| Feature | Linux Kiro | Linux SAM | Windows DCV | K8s Claude Code | RAG Claude Code |
 |---------|------------------|-----------|-------------|-----------------|-----------------|
 | **Platform** | Ubuntu x86_64 | Ubuntu ARM64 | Windows Server | Kubernetes | Kubernetes |
-| **AI Assistant** | Q Developer CLI | Q Developer Extension | - | Claude Code | Claude Code |
+| **AI Assistant** | Kiro CLI | Kiro Extension | - | Claude Code | Claude Code |
 | **Primary Use** | General AWS Dev | Serverless | Windows Dev | Container Dev | RAG/AI Dev |
 | **Cost Efficiency** | Standard | High (ARM64) | Higher | Variable | Variable |
 | **Persistence** | Full VM | Full VM | Full VM | Home directory | Home directory |
@@ -54,7 +54,7 @@ This directory contains Coder workspace templates designed for AWS development w
 
 ### Template Selection Guide
 
-**Choose Linux Q Developer if you want:**
+**Choose Linux Kiro if you want:**
 - AI-powered development assistance
 - Infrastructure as Code with CDK
 - General-purpose AWS development
@@ -91,7 +91,7 @@ Most templates require an IAM instance profile for AWS service access. Configure
 
 ### Regional Deployment
 All templates support multi-region deployment with region-specific optimizations:
-- **Linux Q Developer**: 10 regions globally
+- **Linux Kiro**: 10 regions globally
 - **Linux SAM**: 4 US regions (ARM64 availability)
 - **Windows DCV**: 15 regions globally
 - **Kubernetes**: Depends on cluster location
