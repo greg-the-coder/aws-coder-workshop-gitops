@@ -50,13 +50,13 @@ When the workspace restarts, the pod is recreated but all tools in the home dire
 
 ### Kiro Integration
 - **Kiro CLI**: Latest version with full MCP support
-- **Kiro Web UI**: Browser-based interface (order: 1)
+- **Kiro IDE**: Kiro IDE integration
 - **MCP Ready**: uv/uvx and Node.js pre-installed for MCP servers
 - **Workspace Trust**: Auto-configured for `/home/coder`
 - **Authentication App**: One-click Kiro CLI authentication
 
 ### Development Environment
-- **code-server**: VS Code in the browser (order: 0)
+- **code-server**: VS Code in the browser 
 - **Web Terminal**: Direct terminal access
 - **Coder Login**: Integrated authentication module
 
@@ -195,9 +195,6 @@ After authentication, use Kiro from the terminal:
 # Start an AI chat session
 kiro-cli chat
 
-# Ask Kiro a question
-kiro-cli ask "How do I deploy to AWS with CDK?"
-
 # Get help
 kiro-cli --help
 
@@ -225,17 +222,14 @@ cdk deploy
 Once you've configured MCP servers, you can use them through Kiro CLI:
 
 ```bash
-# Pulumi infrastructure queries
-kiro-cli ask "Show me Pulumi stack outputs"
+# Start a chat session and interact with MCP servers
+kiro-cli chat
 
-# LaunchDarkly feature flag management
-kiro-cli ask "List LaunchDarkly feature flags"
-
-# Arize tracing analysis
-kiro-cli ask "Analyze recent traces"
-
-# Custom server interactions
-kiro-cli ask "Query my custom MCP server"
+# Within the chat, you can query configured MCP servers:
+# - "Show me Pulumi stack outputs"
+# - "List LaunchDarkly feature flags"
+# - "Analyze recent traces"
+# - "Query my custom MCP server"
 ```
 
 ## Workspace Trust Configuration
