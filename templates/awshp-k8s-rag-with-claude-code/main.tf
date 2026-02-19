@@ -45,6 +45,8 @@ variable "postgresql_version" {
   default     = "16.8"
 }
 
+data "coder_task" "me" {}
+
 # Minimum vCPUs needed 
 data "coder_parameter" "cpu" {
   name        = "CPU cores"
@@ -93,15 +95,6 @@ data "coder_parameter" "disk_size" {
   order     = 3
 }
 
-data "coder_parameter" "ai_prompt" {
-    type        = "string"
-    name        = "AI Prompt"
-    icon        = "/emojis/1f4ac.png"
-    description = "Create a task prompt for Claude Code"
-    default = "Look for an AWS RAG Prototyping repo in the Coder Workspace.  If found, create a new Python3 virtual environment, pip install the requirements.txt and then start the app via streamlit."
-    mutable     = false
-}
-
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 
@@ -121,7 +114,7 @@ locals {
   task_prompt = join(" ", [
     "First, post a 'task started' update to Coder.",
     "Then, review all of your memory.",
-    "Finally, ${data.coder_parameter.ai_prompt.value}.",
+    "Finally, ${data.coder_task.me.prompt}.",
   ])
   
   system_prompt = <<-EOT
@@ -156,6 +149,9 @@ locals {
     If you're being tasked to create a Coder template, then,
     - You must ALWAYS ask the user for permission to push it. 
     - You are NOT allowed to push templates OR create workspaces from them without the users explicit approval.
+
+    If you're being tasked to create additional Coder tasks or workspaces, ALWAYS use `coder task create` instead of `coder create`.
+    - Example: coder task create --template "awshp-k8s-rag-with-claude-code" "<your prompt here>"
 
     When reporting URLs to Coder, report to "https://preview--dev--${data.coder_workspace.me.name}--${data.coder_workspace_owner.me.name}.${local.domain}/" that proxies port ${local.port}
   EOT
