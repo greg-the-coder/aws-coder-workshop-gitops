@@ -10,13 +10,13 @@ This directory contains Coder workspace templates designed for AWS development w
 **Key Tools**: Kiro CLI, AWS CLI v2, AWS CDK, Node.js 20 LTS, uv/uvx for MCP servers  
 **Best For**: AI-assisted development, infrastructure as code, MCP server integration
 
-### 🚀 [AWS Workshop - EC2 (Linux) SAM](awshp-linux-sam/)
+### 🚀 [EC2 (Linux) SAM](awshp-linux-sam/)
 **Purpose**: Serverless application development  
 **Architecture**: Ubuntu ARM64 on Graviton EC2 instances  
 **Key Tools**: AWS SAM CLI, AWS CLI v2, Python 3, Kiro extension  
 **Best For**: Lambda functions, serverless APIs, cost-effective ARM64 development
 
-### 🪟 [AWS Workshop - EC2 (Windows) DCV](awshp-windows-dcv/)
+### 🪟 [EC2 (Windows) DCV](awshp-windows-dcv/)
 **Purpose**: Windows development with remote desktop  
 **Architecture**: Windows Server 2022 on x86_64 EC2 instances  
 **Key Tools**: NICE DCV, VS Code, PowerShell, Windows development stack  
@@ -28,8 +28,8 @@ This directory contains Coder workspace templates designed for AWS development w
 **Key Tools**: Claude Code 4.7.1, AWS Bedrock, AWS CLI, AWS CDK, Node.js  
 **Best For**: AI-driven development, task automation, microservices, container orchestration
 
-### 🤖 [RAG with Claude Code](awshp-k8s-rag-with-claude-code/)
-**Purpose**: RAG application prototyping with vector database  
+### 🤖 [Kubernetes with GenAI and Claude Code](awshp-k8s-rag-with-claude-code/)
+**Purpose**: GenAI RAG application prototyping with vector database  
 **Architecture**: Kubernetes pods with Aurora PostgreSQL Serverless v2  
 **Key Tools**: Claude Code, pgvector, AWS Bedrock, Streamlit, Python tooling  
 **Best For**: AI/ML applications, vector search, RAG prototyping, data science
