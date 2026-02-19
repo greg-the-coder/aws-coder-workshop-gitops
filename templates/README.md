@@ -28,7 +28,7 @@ This directory contains Coder workspace templates designed for AWS development w
 **Key Tools**: Claude Code 4.7.1, AWS Bedrock, AWS CLI, AWS CDK, Node.js  
 **Best For**: AI-driven development, task automation, microservices, container orchestration
 
-### 🤖 [Kubernetes with GenAI and Claude Code](awshp-k8s-rag-with-claude-code/)
+### 🤖 [Kubernetes with RAG and Claude Code](awshp-k8s-rag-with-claude-code/)
 **Purpose**: GenAI RAG application prototyping with vector database  
 **Architecture**: Kubernetes pods with Aurora PostgreSQL Serverless v2  
 **Key Tools**: Claude Code, pgvector, AWS Bedrock, Streamlit, Python tooling  
