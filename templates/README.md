@@ -36,11 +36,11 @@ This directory contains Coder workspace templates designed for AWS development w
 
 ## Template Comparison
 
-| Feature | K8s Kiro CLI | Linux SAM | Windows DCV | K8s Claude Code | RAG Claude Code |
+| Feature | K8s Kiro CLI | Linux SAM | Windows DCV | K8s Claude Code | K8S RAG Claude Code |
 |---------|------------------|-----------|-------------|-----------------|-----------------|
 | **Platform** | Kubernetes | Ubuntu ARM64 | Windows Server | Kubernetes | Kubernetes |
 | **AI Assistant** | Kiro CLI + MCP | Kiro Extension | - | Claude Code | Claude Code |
-| **Primary Use** | General AWS Dev | Serverless | Windows Dev | Container Dev | RAG/AI Dev |
+| **Primary Use** | General AWS Dev | Serverless | Windows Dev | Container Dev | GenAI/RAG Dev |
 | **Cost Efficiency** | Variable | High (ARM64) | Higher | Variable | Variable |
 | **Persistence** | Home directory | Full VM | Full VM | Home directory | Home directory |
 | **Startup Time** | ~30-60 sec | ~2-3 min | ~5-10 min | ~30-60 sec | ~5-10 min |
@@ -79,8 +79,8 @@ This directory contains Coder workspace templates designed for AWS development w
 - Microservices architecture
 - Fast workspace startup times
 
-**Choose RAG Claude Code if you want:**
-- RAG application development
+**Choose Kubernetes RAG Claude Code if you want:**
+- GenAI/RAG application development
 - Vector database integration
 - AI/ML prototyping with Bedrock
 - Streamlit-based data applications

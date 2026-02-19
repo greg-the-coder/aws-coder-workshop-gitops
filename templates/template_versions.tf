@@ -105,7 +105,7 @@ resource "coderd_template" "awshp-k8s-with-kiro_cli" {
 
 resource "coderd_template" "awshp-k8s-rag-with-claude-code" {
   name        = "awshp-k8s-rag-with-claude-code"
-  display_name = "AWS Workshop Kubernetes AWS RAG Prototyping with Claude Code"
+  display_name = "AWS Workshop Kubernetes RAG Prototyping with Claude Code"
   description = "Provision Kubernetes Deployments as Coder workspaces with Anthropic Claude Code for AWS RAG prototyping."
   icon = "/icon/k8s.png"
   versions = [{
