@@ -185,6 +185,7 @@ resource "coder_app" "code-server" {
 }
 
 module "kiro" {
+    count    = data.coder_workspace.me.start_count
     source   = "registry.coder.com/coder/kiro/coder"
     version  = "1.1.0"
     agent_id = coder_agent.dev[0].id
