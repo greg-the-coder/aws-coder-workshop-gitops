@@ -9,7 +9,7 @@ tags: [vm, linux, aws, persistent-vm, sam, serverless, lambda]
 
 # Remote Development on AWS EC2 VMs (Linux) with SAM
 
-Provision AWS EC2 VMs with integrated AWS SAM CLI, AWS CLI, and Amazon Q Developer for serverless development as [Coder workspaces](https://coder.com/docs/workspaces) with this workshop template.
+Provision AWS EC2 VMs with integrated AWS SAM CLI, AWS CLI, and Kiro for serverless development as [Coder workspaces](https://coder.com/docs/workspaces) with this workshop template.
 
 <!-- TODO: Add screenshot -->
 
@@ -104,7 +104,7 @@ Coder uses `aws_ec2_instance_state` to start and stop the VM. This template is f
 
 ## Features
 
-- **VS Code Web**: Access VS Code through the browser with Amazon Q Developer extension
+- **VS Code Web**: Access VS Code through the browser with Kiro extension
 - **AWS SAM CLI**: Serverless Application Model for Lambda development
 - **AWS CLI**: Pre-installed ARM64 version for full AWS service support
 - **Python 3**: Runtime environment for Lambda functions
@@ -124,7 +124,7 @@ Coder uses `aws_ec2_instance_state` to start and stop the VM. This template is f
 ## Development Tools
 
 ### Code Server
-`code-server` is installed directly and provides VS Code access through the browser on port 13337 with Amazon Q Developer extension pre-installed.
+`code-server` is installed directly and provides VS Code access through the browser on port 13337 with Kiro extension pre-installed.
 
 ### AWS SAM CLI
 The SAM CLI is automatically installed and provides:

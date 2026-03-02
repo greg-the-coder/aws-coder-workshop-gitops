@@ -21,65 +21,9 @@ variable "namespace" {
   default     = "coder"
 }
 
-variable "anthropic_model" {
-  type        = string
-  description = "The AWS Inference profile ID of the base Anthropic model to use with Claude Code"
-  default     = "global.anthropic.claude-opus-4-5-20251101-v1:0"
-}
-
-data "coder_task" "me" {}
-
 locals {
   home_dir = "/home/coder"
   bin_path = "/home/coder/.local/bin:/home/coder/bin:/home/coder/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-  cost     = 2
-  port     = 3000
-  domain   = element(split("/", data.coder_workspace.me.access_url), -1)
-  
-  task_prompt = join(" ", [
-    "First, post a 'task started' update to Coder.",
-    "Then, review all of your memory.",
-    "Finally, ${data.coder_task.me.prompt}.",
-  ])
-  
-  system_prompt = <<-EOT
-    Hey! First, report an initial task to Coder to show you have started! The user has provided you with a prompt of something to create. Create it the best you can, and keep it as succinct as possible.
-    
-    If you're being tasked to create a web application, then:
-    - ALWAYS start the server using `python3` or `node` on localhost:${local.port}.
-    - BEFORE starting the server, ALWAYS attempt to kill ANY process using port ${local.port}, and then run the dev server on port ${local.port}.
-    - ALWAYS build the project using dev servers (and ALWAYS VIA desktop-commander)
-    - When finished, you should use Playwright to review the HTML to ensure it is working as expected.
-
-    ALWAYS run long-running commands (e.g. `pnpm dev` or `npm run dev`) using desktop-commander so it runs it in the background and users can prompt you.  Other short-lived commands (build, test, cd, write, read, view, etc) can run normally.
-
-    NEVER run the dev server without desktop-commander.
-
-    For previewing, always use the dev server for fast feedback loops (never do a full Next.js build, for exmaple). A simple HTML/static is preferred for web applications, but pick the best AND lightest framework for the job.
-    
-    The dev server will ALWAYS be on localhost:${local.port} and NEVER start on another port. If the dev server crashes for some reason, kill port ${local.port} (or the desktop-commander session) and restart the dev server.
-
-    After large changes, use Playwright to ensure your changes work (preview localhost:${local.port}). Take a screenshot, look at the screenshot. Also look at the HTML output from Playwright. If there are errors or something looks "off," fix it.
-    
-    Aim to autonomously investigate and solve issues the user gives you and test your work, whenever possible.
-    
-    Avoid shortcuts like mocking tests. When you get stuck, you can ask the user but opt for autonomy.
-    
-    In your task reports to Coder:
-    - Be specific about what you're doing
-    - Clearly indicate what information you need from the user when in "failure" state
-    - Keep it under 160 characters
-    - Make it actionable
-
-    If you're being tasked to create a Coder template, then,
-    - You must ALWAYS ask the user for permission to push it. 
-    - You are NOT allowed to push templates OR create workspaces from them without the users explicit approval.
-
-    If you're being tasked to create additional Coder tasks or workspaces, ALWAYS use `coder task create` instead of `coder create`.
-    - Example: coder task create --template "awshp-k8s-with-claude-code" "<your prompt here>"
-
-    When reporting URLs to Coder, report to "https://preview--dev--${data.coder_workspace.me.name}--${data.coder_workspace_owner.me.name}.${local.domain}/" that proxies port ${local.port}
-  EOT
 }
 
 # Minimum vCPUs needed 
@@ -94,7 +38,7 @@ data "coder_parameter" "cpu" {
   }
   form_type = "input"
   mutable   = true
-  default   = 4
+  default   = 2
   order     = 1
 }
 
@@ -110,7 +54,7 @@ data "coder_parameter" "memory" {
   }
   form_type = "input"
   mutable   = true
-  default   = 8
+  default   = 4
   order     = 2
 }
 
@@ -133,22 +77,17 @@ data "coder_parameter" "disk_size" {
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 
-resource "coder_env" "bedrock_use" {
-  agent_id = coder_agent.dev.id
-  name     = "CLAUDE_CODE_USE_BEDROCK"
-  value    = "1"
-}
-
-resource "coder_env" "path" {
-  agent_id = coder_agent.dev.id
-  name     = "PATH"
-  value    = local.bin_path
+locals {
+    cost = 2
 }
 
 resource "coder_agent" "dev" {
     arch = "amd64"
     os = "linux"
     dir = local.home_dir
+    env = {
+        PATH = local.bin_path
+    }
     display_apps {
         vscode          = false
         vscode_insiders = false
@@ -157,6 +96,140 @@ resource "coder_agent" "dev" {
     }
     startup_script = <<-EOT
     set -e
+    
+    # Create persistent bin directory
+    mkdir -p $HOME/bin
+    mkdir -p $HOME/.local/bin
+    
+    # Update PATH for current session
+    export PATH="$HOME/.local/bin:$HOME/bin:$HOME/.npm-global/bin:$PATH"
+    
+    sudo apt update
+    sudo apt install -y curl unzip gnupg dirmngr
+
+    # install AWS CLI to persistent location
+    if ! command -v aws &> /dev/null; then
+      echo "Installing AWS CLI..."
+      cd $HOME
+      curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      unzip -q awscliv2.zip
+      
+      # Install to home directory instead of system-wide
+      ./aws/install --install-dir $HOME/.local/aws-cli --bin-dir $HOME/.local/bin
+      
+      # Verify installation
+      aws --version
+      
+      # Cleanup
+      rm -rf aws awscliv2.zip
+      
+      echo "AWS CLI installation completed"
+    else
+      echo "AWS CLI is already installed"
+      aws --version
+    fi
+
+    # install Node.js and npm (required for CDK and Kiro CLI)
+    if ! command -v node &> /dev/null; then
+      echo "Installing Node.js..."
+      # Add NodeSource repository for the latest LTS version
+      curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+      sudo apt-get install nodejs -y
+      
+      # Verify installation
+      node -v
+      npm -v
+      
+      echo "Node.js installation completed"
+    else
+      echo "Node.js is already installed"
+      node -v
+    fi
+
+    # install AWS CDK to persistent location
+    if ! command -v cdk &> /dev/null; then
+      echo "Installing AWS CDK..."
+      
+      # Configure npm to use home directory for global packages
+      mkdir -p $HOME/.npm-global
+      npm config set prefix "$HOME/.npm-global"
+      
+      # Install AWS CDK to home directory
+      npm install -g aws-cdk
+      
+      # Create symlink in bin directory
+      ln -sf $HOME/.npm-global/bin/cdk $HOME/.local/bin/cdk
+      
+      # Verify CDK installation
+      cdk --version
+      
+      echo "AWS CDK installation completed"
+    else
+      echo "AWS CDK is already installed"
+      cdk --version
+    fi
+
+    # install Kiro CLI to persistent location
+    if ! command -v kiro-cli &> /dev/null; then
+      echo "Installing Kiro CLI..."
+      curl -fsSL https://cli.kiro.dev/install | bash
+      
+      # Verify Kiro CLI installation
+      kiro-cli version
+      
+      echo "Kiro CLI installation completed"
+    else
+      echo "Kiro CLI is already installed"
+      kiro-cli version
+    fi
+
+    # Install uv (Python package manager) which includes uvx for MCP servers
+    if [ ! -f "$HOME/.local/bin/uv" ]; then
+      echo "Installing uv/uvx..."
+      UV_UNMANAGED_INSTALL="$HOME/.local/bin" curl -LsSf https://astral.sh/uv/install.sh | sh
+      echo "uv/uvx installation completed"
+    else
+      echo "uv/uvx is already installed"
+    fi
+    
+    # Configure Kiro CLI MCP servers
+    echo "Configuring Kiro CLI MCP servers..."
+    mkdir -p $HOME/.kiro/settings
+    
+    # Create MCP configuration file
+    #cat > $HOME/.kiro/settings/mcp.json <<'MCP_EOF'
+    #MCP_EOF
+    
+    echo "Kiro CLI MCP configuration completed"
+    
+    # Configure workspace trust settings for Kiro IDE
+    echo "Configuring Kiro IDE workspace trust..."
+    mkdir -p $HOME/.local/share/code-server/User
+    
+    # Create or update settings.json to trust the home folder
+    cat > $HOME/.local/share/code-server/User/settings.json <<'SETTINGS_EOF'
+    {
+      "security.workspace.trust.enabled": true,
+      "security.workspace.trust.startupPrompt": "never",
+      "security.workspace.trust.emptyWindow": false,
+      "security.workspace.trust.untrustedFiles": "open"
+    }
+    SETTINGS_EOF
+    
+    # Add trusted folders configuration
+    mkdir -p $HOME/.kiro/settings
+    cat > $HOME/.kiro/settings/trusted-workspaces.json <<'TRUST_EOF'
+    {
+      "trustedFolders": [
+        "/home/coder"
+      ]
+    }
+    TRUST_EOF
+    
+    echo "Kiro IDE workspace trust configuration completed"
+    
+    #Symlink Coder Agent
+    ln -sf /tmp/coder.*/coder "$CODER_SCRIPT_BIN_DIR/coder" 
 
     EOT
 
@@ -184,135 +257,14 @@ module "kiro" {
     order = 1
 }
 
-module "claude-code" {
-    count               = data.coder_workspace.me.start_count
-    source              = "registry.coder.com/coder/claude-code/coder"
-    version             = "4.7.1"
-    model               = var.anthropic_model
-    agent_id            = coder_agent.dev.id
-    workdir             = local.home_dir
-    subdomain           = false
-    ai_prompt           = local.task_prompt
-    system_prompt       = local.system_prompt
-    report_tasks        = true
-        
-    pre_install_script = <<-EOF
-    set -e    
-    
-    sudo apt update
-    sudo apt install -y curl unzip gnupg dirmngr 
-    
-    # Move cross module/workspace requirements into single place to avoid race conditions
-    
-    # Create persistent bin directory
-    mkdir -p $HOME/bin
-    mkdir -p $HOME/.local/bin
-    
-    # Update PATH for current session
-    export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
-
-    # install Node.js and npm (required for CDK)
-    if ! command -v node &> /dev/null; then
-      echo "Installing Node.js..."
-      # Add NodeSource repository for the latest LTS version
-      curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-      sudo apt-get install nodejs -y
-      
-      # Verify installation
-      node -v
-      npm -v
-      
-      echo "Node.js installation completed"
-    else
-      echo "Node.js is already installed"
-      node -v
-    fi
-
-    # install AWS CLI to persistent location
-    if ! command -v aws &> /dev/null; then
-      echo "Installing AWS CLI..."
-      cd $HOME
-      curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-      unzip -q awscliv2.zip
-      
-      # Install to home directory instead of system-wide
-      ./aws/install --install-dir $HOME/.local/aws-cli --bin-dir $HOME/.local/bin
-      
-      # Verify installation
-      aws --version
-      
-      # Cleanup
-      rm -rf aws awscliv2.zip
-      
-      echo "AWS CLI installation completed"
-    else
-      echo "AWS CLI is already installed"
-      aws --version
-    fi
-
-    # install AWS CDK to persistent location
-    if ! command -v cdk &> /dev/null; then
-      echo "Installing AWS CDK..."
-      
-      # Configure npm to use home directory for global packages
-      mkdir -p $HOME/.npm-global
-      npm config set prefix "$HOME/.npm-global"
-      
-      # Install AWS CDK to home directory
-      npm install -g aws-cdk
-      
-      # Create symlink in bin directory
-      ln -sf $HOME/.npm-global/bin/cdk $HOME/.local/bin/cdk
-      
-      # Verify CDK installation
-      cdk --version
-      
-      echo "AWS CDK installation completed"
-    else
-      echo "AWS CDK is already installed"
-      cdk --version
-    fi
-
-    #Symlink Coder Agent
-    ln -sf /tmp/coder.*/coder "$CODER_SCRIPT_BIN_DIR/coder" 
-
-    EOF
-
-    post_install_script = <<-EOF
-
-    # Install uv (Python package manager) which includes uvx         
-    if [ ! -f "$HOME/.local/bin/uv" ]; then                          
-      UV_UNMANAGED_INSTALL="$HOME/.local/bin" curl -LsSf https://astral.sh/uv/install.sh | sh                             
-    fi   
-
-    # Add MCP Servers via claude cli
-    #claude mcp add <TBD>
-
-    EOF
-
-    order               = 999
-}
-
-resource "coder_ai_task" "claude-code" {
-    count  = data.coder_workspace.me.start_count
-    app_id = module.claude-code[0].task_app_id
-}
-
-resource "coder_app" "preview" {
+resource "coder_app" "kiro_cli" {
     agent_id     = coder_agent.dev.id
-    slug         = "preview"
-    display_name = "Preview your app"
-    icon         = "${data.coder_workspace.me.access_url}/emojis/1f50e.png"
-    url          = "http://localhost:${local.port}"
-    share        = "authenticated"
-    subdomain    = false
-    open_in      = "tab"
-    order = 3
-    healthcheck {
-        url       = "http://localhost:${local.port}/"
-        interval  = 5
-        threshold = 15
-    }
+    slug         = "kiro-auth"
+    display_name = "Kiro CLI"
+    icon         = "${data.coder_workspace.me.access_url}/icon/kiro.svg"
+    command      = "kiro-cli"
+    share        = "owner"
+    order        = 2
 }
 
 resource "kubernetes_persistent_volume_claim" "home" {
