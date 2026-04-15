@@ -195,7 +195,7 @@ module "claude-code" {
     ai_prompt           = local.task_prompt
     system_prompt       = local.system_prompt
     report_tasks        = true
-    permission_mode     = "bypassPermissions"
+  # permission_mode     = "bypassPermissions"
         
     pre_install_script = <<-EOF
     set -e    
