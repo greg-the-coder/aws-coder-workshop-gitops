@@ -187,7 +187,7 @@ module "kiro" {
 module "claude-code" {
     count               = data.coder_workspace.me.start_count
     source              = "registry.coder.com/coder/claude-code/coder"
-    version             = "4.7.1"
+    version             = "4.9.0"
     model               = var.anthropic_model
     agent_id            = coder_agent.dev.id
     workdir             = local.home_dir
@@ -195,7 +195,7 @@ module "claude-code" {
     ai_prompt           = local.task_prompt
     system_prompt       = local.system_prompt
     report_tasks        = true
-    permission_mode = "default"
+    permission_mode     = "bypassPermissions"
         
     pre_install_script = <<-EOF
     set -e    
