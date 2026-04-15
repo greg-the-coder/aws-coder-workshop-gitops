@@ -282,15 +282,22 @@ module "claude-code" {
 
     post_install_script = <<-EOF
 
-    # Install uv (Python package manager) which includes uvx         
-    if [ ! -f "$HOME/.local/bin/uv" ]; then                          
-      UV_UNMANAGED_INSTALL="$HOME/.local/bin" curl -LsSf https://astral.sh/uv/install.sh | sh                             
-    fi   
+# Install uv (Python package manager) which includes uvx         
+if [ ! -f "$HOME/.local/bin/uv" ]; then                          
+  UV_UNMANAGED_INSTALL="$HOME/.local/bin" curl -LsSf https://astral.sh/uv/install.sh | sh                             
+fi   
 
-    # Add MCP Servers via claude cli
-    #claude mcp add <TBD>
+# Bypass the dangerously-skip-permissions TOS prompt
+# Required due to Claude Code bug: the --dangerously-skip-permissions flag alone
+# does not suppress the interactive dialog; settings.json must also be set.
+mkdir -p "$HOME/.claude"
+if [ -f "$HOME/.claude/settings.json" ]; then
+  tmp=$(mktemp) && jq '. + {"skipDangerousModePermissionPrompt": true}' "$HOME/.claude/settings.json" > "$tmp" && mv "$tmp" "$HOME/.claude/settings.json" || true
+else
+  echo '{"skipDangerousModePermissionPrompt": true}' > "$HOME/.claude/settings.json"
+fi
 
-    EOF
+EOF
 
     order               = 999
 }
