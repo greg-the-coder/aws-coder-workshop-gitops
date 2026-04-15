@@ -281,6 +281,21 @@ module "claude-code" {
 
     post_install_script = <<-EOF
 
+    # Pre-accept the bypass permissions TOS prompt
+    mkdir -p $HOME/.claude
+    if [ -f "$HOME/.claude/settings.json" ]; then
+     tmp=$(mktemp)
+     jq '. + {"skipDangerousModePermissionPrompt": true}' "$HOME/.claude/settings.json" > "$tmp" && mv "$tmp" "$HOME/.claude/settings.json"
+    else
+     echo '{"skipDangerousModePermissionPrompt": true}' > "$HOME/.claude/settings.json"
+    fi
+
+    # Also ensure .claude.json has the bypass acceptance
+    if [ -f "$HOME/.claude.json" ]; then
+     tmp=$(mktemp)
+     jq '. + {"bypassPermissionsModeAccepted": true, "autoModeAccepted": true}' "$HOME/.claude.json" > "$tmp" && mv "$tmp" "$HOME/.claude.json"
+    fi
+
     # Install uv (Python package manager) which includes uvx         
     if [ ! -f "$HOME/.local/bin/uv" ]; then                          
       UV_UNMANAGED_INSTALL="$HOME/.local/bin" curl -LsSf https://astral.sh/uv/install.sh | sh                             
