@@ -201,7 +201,7 @@ module "claude-code" {
     set -e    
     
     sudo apt update
-    sudo apt install -y curl unzip gnupg dirmngr 
+    sudo apt install -y curl unzip gnupg dirmngr jq
     
     # Move cross module/workspace requirements into single place to avoid race conditions
     
