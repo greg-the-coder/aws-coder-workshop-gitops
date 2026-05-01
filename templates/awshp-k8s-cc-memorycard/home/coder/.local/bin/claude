@@ -1,0 +1,28 @@
+#!/bin/bash 
+
+set -e
+
+source $(which random-port)
+
+AGENT_CMD=/usr/local/bin/claude
+
+CODER_DIRNAME=$(dirname $(which coder))
+CODER_CMD="$CODER_DIRNAME/coder"
+CODER_NO_CAPS_CMD="$CODER_DIRNAME/coder-no-caps"
+CODER_BOUNDARY_CONFIG=~/.config/coder_boundary/boundary-config.yaml
+
+[ -e "$CODER_NO_CAPS_CMD" ] || cp "$CODER_CMD" "$CODER_NO_CAPS_CMD" > /dev/null
+
+cleanup() {
+	if [ -n "$PID" ]; then
+		kill -TERM "$PID" 2> /dev/null
+	fi
+	exit 0
+}
+trap cleanup SIGHUP SIGTERM SIGINT EXIT
+
+"$CODER_NO_CAPS_CMD" boundary \
+	--proxy-port "$PORT_CANDIDATE" \
+	--config "$CODER_BOUNDARY_CONFIG" -- "$AGENT_CMD" "$@" &
+PID=$!
+wait $PID

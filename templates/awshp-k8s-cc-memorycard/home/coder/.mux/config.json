@@ -1,0 +1,31 @@
+{
+    "taskSettings" : {
+        "maxParallelAgentTasks" : 3,
+        "maxTaskNestingDepth" : 3,
+        "proposePlanImplementReplacesChatHistory" : false,
+        "planSubagentDefaultsToOrchestrator" : false,
+        "bashOutputCompactionMinLines" : 10,
+        "bashOutputCompactionMinTotalBytes" : 4096,
+        "bashOutputCompactionMaxKeptLines" : 40,
+        "bashOutputCompactionTimeoutMs" : 5000,
+        "bashOutputCompactionHeuristicFallback" : true
+    },
+    "defaultModel" : "anthropic:claude-opus-4-5",
+    "hiddenModels" : [
+        "anthropic:claude-opus-4-6",
+        "anthropic:claude-sonnet-4-6",
+        "openai:gpt-5.2",
+        "openai:gpt-5.2-pro",
+        "openai:gpt-5.2-codex",
+        "openai:gpt-5.3-codex",
+        "openai:gpt-5.1-codex-mini",
+        "openai:gpt-5.1-codex-max",
+        "google:gemini-3.1-pro-preview",
+        "google:gemini-3-flash-preview",
+        "xai:grok-4-1-fast",
+        "xai:grok-code-fast-1"
+    ],
+    "viewedSplashScreens" : [
+        "onboarding-wizard-v1"
+    ]
+}

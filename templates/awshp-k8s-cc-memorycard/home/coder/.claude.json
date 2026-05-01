@@ -1,0 +1,19 @@
+{
+  "numStartups": 1,
+  "lastOnboardingVersion": "2.1.83",
+  "hasCompletedOnboarding": true,
+  "projects": {
+    "${home_folder}": {
+      "hasTrustDialogAccepted": true,
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "projectOnboardingSeenCount": 1,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "exampleFiles": []
+    }
+  }
+}

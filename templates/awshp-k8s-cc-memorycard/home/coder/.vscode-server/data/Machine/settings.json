@@ -1,0 +1,8 @@
+{
+    "workbench.colorTheme" : "Default Dark Modern",
+    "workbench.preferredDarkColorTheme" : "Default Dark Modern",
+    "workbench.preferredHighContrastColorTheme" : "Default High Contrast",
+    "git.useIntegratedAskPass" : false,
+    "github.gitAuthentication" : false,
+    "security.workspace.trust.enabled" : false,
+}

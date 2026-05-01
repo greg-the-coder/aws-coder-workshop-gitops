@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -e
+
+# Random Port Script Source: https://gist.github.com/elasticdog/6f5c0ee4064da162f4efc48d3934a838
+
+readonly HOST=${1:-127.0.0.1}
+
+readonly FLOOR=49152
+readonly RANGE=$((65535 - FLOOR + 1))
+
+# Returns random number from 0 to ($1-1) in global var 'r'.
+rand() {
+	local max=$((32768 / $1 * $1))
+	while (((r = RANDOM) >= max)); do :; done
+	r=$((r % $1))
+}
+
+# Check if TCP connections to $HOST on port $1 are refused.
+connection_refused() {
+	! (echo "" >"/dev/tcp/${HOST}/${1}") &>/dev/null
+}
+
+while true; do
+	rand $RANGE
+	PORT_CANDIDATE=$((FLOOR + r))
+	if connection_refused $PORT_CANDIDATE; then
+		break
+	fi
+done
