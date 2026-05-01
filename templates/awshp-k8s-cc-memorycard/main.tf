@@ -67,10 +67,10 @@ resource "coder_script" "vscode" {
 
 locals {
   coder_agent_agent_envs = merge({
-    ANTHROPIC_BASE_URL = "${data.coder_workspace.me.access_url}/api/v2/aibridge/anthropic"
-    ANTHROPIC_MODEL = "claude-opus-4-5"
+    CLAUDE_CODE_USE_BEDROCK    = "1"
+    ANTHROPIC_MODEL            = "claude-opus-4-5"
     ANTHROPIC_SMALL_FAST_MODEL = "claude-haiku-4-5"
-    COLORTERM = true
+    COLORTERM                  = true
   }, {})
   coder_agent_main_envs = merge({
     GIT_AUTHOR_NAME     = coalesce(data.coder_workspace_owner.me.full_name, data.coder_workspace_owner.me.name)
@@ -84,9 +84,6 @@ locals {
     GIT_CONFIG_VALUE_1  = data.coder_workspace_owner.me.email
     GH_USERNAME         = local.gh_username
     GH_TOKEN = var.gh_token
-
-    MUX_MODEL = "anthropic:claude-opus-4-5",
-    MUX_POLICY_FILE = "${local.home_folder}/.mux/policy.json"
   }, {})
 }
 
@@ -161,7 +158,7 @@ resource "coder_script" "agent" {
 
     echo "Setting up AI Agent Settings..."
 
-    ln -sf ${local.home_folder}/.local/bin/claude "$CODER_SCRIPT_BIN_DIR/claude"
+    ln -sf /usr/local/bin/claude "$CODER_SCRIPT_BIN_DIR/claude"
     chmod +x "$CODER_SCRIPT_BIN_DIR/claude"
 
     ARG_CODER_MCP_CLAUDE_SYSTEM_PROMPT=$(mktemp)
@@ -195,23 +192,9 @@ resource "coder_app" "agent" {
 
     set -e
 
-    source $(which random-port)
-
-    REAL_CLAUDE_CLI=/usr/local/bin/claude
-    CODER_DIRNAME=$(dirname $(which coder))
-    CODER_CMD="$CODER_DIRNAME/coder"
-    CODER_NO_CAPS_CMD="$CODER_DIRNAME/coder-no-caps"
-    CODER_BOUNDARY_CONFIG="${local.home_folder}/.config/coder_boundary/boundary-config.yaml"
-    CODER_BOUNDARY_PORT="$PORT_CANDIDATE"
-
-    { lsof -t -i:$CODER_BOUNDARY_PORT | xargs -r kill -9 ; } 2>/dev/null || true
-    [ -e "$CODER_NO_CAPS_CMD" ] || cp "$CODER_CMD" "$CODER_NO_CAPS_CMD" > /dev/null
-
     cd ${local.work_folder}
 
-    $CODER_NO_CAPS_CMD boundary \
-      --proxy-port $CODER_BOUNDARY_PORT \
-      --config "$CODER_BOUNDARY_CONFIG" -- /bin/bash -c "$REAL_CLAUDE_CLI -c 2>/dev/null || $REAL_CLAUDE_CLI 2>/dev/null"
+    /usr/local/bin/claude -c 2>/dev/null || /usr/local/bin/claude 2>/dev/null
   EOF
   share        = "owner"
   open_in      = "tab"
@@ -227,23 +210,6 @@ module "portabledesktop" {
   source   = "registry.coder.com/coder/portabledesktop/coder"
   version  = "0.1.0"
   agent_id = coder_agent.main.id
-}
-
-module "cmux" {
-  count    = tobool(data.coder_parameter.enable_mux.value) ? data.coder_workspace.me.start_count : 0
-  source   = "registry.coder.com/coder/mux/coder"
-  version  = "1.4.3"
-  agent_id = coder_agent.main.id
-
-  subdomain = true
-  port      = 8081
-
-  add_project    = local.work_folder
-  install_prefix = "/usr/bin"
-  use_cached     = true
-
-  order = 998
-  group = "Web Editors"
 }
 
 resource "coder_script" "preview" {

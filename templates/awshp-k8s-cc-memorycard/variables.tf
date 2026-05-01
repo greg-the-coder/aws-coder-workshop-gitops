@@ -71,21 +71,9 @@ data "coder_parameter" "use_bots_git_creds" {
   order       = 11
 }
 
-data "coder_parameter" "enable_mux" {
-  name = "Enable Coder Mux"
-  description = "Toggle Coder Mux on/off."
-  type = "bool"
-  default     = true
-  mutable     = true
-  order       = 12
-}
-
 locals {
   memory-card-port = 5173
   memory-card = {
-    # (data.coder_parameter.system_prompt.name) = templatefile("./scripts/memory-card/SYSTEM.md", {
-    #   PORT = local.memory-card-port
-    # })
     "Preview Port" = local.memory-card-port
     (data.coder_parameter.use_bots_git_creds.name) = true
   }
