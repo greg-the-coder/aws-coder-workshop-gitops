@@ -1,8 +1,3 @@
-data "coder_external_auth" "github" {
-  id       = "primary-github"
-  optional = true
-}
-
 data "coder_workspace" "me" {}
 
 data "coder_workspace_owner" "me" {}
@@ -12,22 +7,25 @@ locals {
   repo_name      = element(split(".", element(split("/", local.repo), -1)), 0)
   home_folder    = "/home/coder"
   work_folder    = join("/", [local.home_folder, local.repo_name])
-  preview_port           = data.coder_parameter.preview_port.value == "" ? 5173 : data.coder_parameter.preview_port.value
+  preview_port   = data.coder_parameter.preview_port.value == "" ? 5173 : data.coder_parameter.preview_port.value
   domain         = element(split("/", data.coder_workspace.me.access_url), -1)
-  gh_token       = tobool(data.coder_parameter.use_bots_git_creds.value) ? var.gh_token : data.coder_external_auth.github.access_token
-  gh_username    = tobool(data.coder_parameter.use_bots_git_creds.value) ? var.gh_username : data.coder_workspace_owner.me.name
+  gh_token       = var.gh_token
+  gh_username    = var.gh_username != "" ? var.gh_username : data.coder_workspace_owner.me.name
+  gh_email       = var.gh_email != "" ? var.gh_email : data.coder_workspace_owner.me.email
 }
 
 module "coder-login" {
-  count  = data.coder_workspace.me.start_count
-  source = "registry.coder.com/coder/coder-login/coder"
+  count    = data.coder_workspace.me.start_count
+  source   = "registry.coder.com/coder/coder-login/coder"
+  version  = "1.1.1"
 
   agent_id = coder_agent.main.id
 }
 
 module "coder-login-agent" {
-  count  = data.coder_workspace.me.start_count
-  source = "registry.coder.com/coder/coder-login/coder"
+  count    = data.coder_workspace.me.start_count
+  source   = "registry.coder.com/coder/coder-login/coder"
+  version  = "1.1.1"
 
   # agent_id = coder_agent.main-agent.id
   agent_id = coder_agent.main.id
@@ -84,8 +82,8 @@ locals {
     GIT_CONFIG_VALUE_0  = coalesce(data.coder_workspace_owner.me.full_name, data.coder_workspace_owner.me.name)
     GIT_CONFIG_KEY_1    = "user.email"
     GIT_CONFIG_VALUE_1  = data.coder_workspace_owner.me.email
-    GH_USERNAME         = data.coder_workspace_owner.me.email
-    GH_TOKEN = try(data.coder_external_auth.github.access_token, "")
+    GH_USERNAME         = local.gh_username
+    GH_TOKEN = var.gh_token
 
     MUX_MODEL = "anthropic:claude-opus-4-5",
     MUX_POLICY_FILE = "${local.home_folder}/.mux/policy.json"
@@ -93,7 +91,8 @@ locals {
 }
 
 module "git-clone" {
-  source = "registry.coder.com/coder/git-clone/coder"
+  source   = "registry.coder.com/coder/git-clone/coder"
+  version  = "1.2.3"
 
   agent_id = coder_agent.main.id
   url      = local.repo
@@ -101,8 +100,9 @@ module "git-clone" {
 }
 
 module "vscode-web" {
-  count  = data.coder_workspace.me.start_count
-  source = "registry.coder.com/coder/vscode-web/coder"
+  count    = data.coder_workspace.me.start_count
+  source   = "registry.coder.com/coder/vscode-web/coder"
+  version  = "1.3.1"
 
   extensions              = local.vscode-web-extensions
   offline                 = false
@@ -117,8 +117,9 @@ module "vscode-web" {
 }
 
 module "vscode-desktop" {
-  count  = data.coder_workspace.me.start_count
-  source = "registry.coder.com/coder/vscode-desktop/coder"
+  count    = data.coder_workspace.me.start_count
+  source   = "registry.coder.com/coder/vscode-desktop/coder"
+  version  = "1.2.1"
 
   agent_id = coder_agent.main.id
   folder   = local.work_folder
@@ -127,8 +128,9 @@ module "vscode-desktop" {
 }
 
 module "filebrowser" {
-  count  = data.coder_workspace.me.start_count
-  source = "registry.coder.com/coder/filebrowser/coder"
+  count    = data.coder_workspace.me.start_count
+  source   = "registry.coder.com/coder/filebrowser/coder"
+  version  = "1.1.4"
 
   agent_id = coder_agent.main.id
   order    = 999

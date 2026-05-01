@@ -1,21 +1,28 @@
 variable "gh_token" {
-  type      = string
-  sensitive = true
+  type        = string
+  description = "GitHub token for API access. Defaults to empty string if not provided."
+  sensitive   = true
+  default     = ""
 }
 
 variable "gh_username" {
-  type      = string
-  sensitive = true
+  type        = string
+  description = "GitHub username. Defaults to empty string; falls back to Coder workspace owner name."
+  sensitive   = true
+  default     = ""
 }
 
 variable "gh_email" {
-  type      = string
-  sensitive = true
+  type        = string
+  description = "GitHub email. Defaults to empty string; falls back to Coder workspace owner email."
+  sensitive   = true
+  default     = ""
 }
 
 variable "namespace" {
-  type      = string
-  sensitive = true
+  type        = string
+  description = "The Kubernetes namespace to create workspaces in (must exist prior to creating workspaces)."
+  default     = "coder"
 }
 
 data "coder_parameter" "select_ai" {

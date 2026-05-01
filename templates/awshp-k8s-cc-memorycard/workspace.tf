@@ -1,7 +1,14 @@
 locals {
   ws_name = "coder-ws-${data.coder_workspace.me.id}"
   labels = {
-    "com.coder.workspace.uuid" = data.coder_workspace.me.id
+    "app.kubernetes.io/name"     = "coder-workspace"
+    "app.kubernetes.io/instance" = "coder-workspace-${data.coder_workspace.me.id}"
+    "app.kubernetes.io/part-of"  = "coder"
+    "com.coder.resource"         = "true"
+    "com.coder.workspace.id"     = data.coder_workspace.me.id
+    "com.coder.workspace.name"   = data.coder_workspace.me.name
+    "com.coder.user.id"          = data.coder_workspace_owner.me.id
+    "com.coder.user.username"    = data.coder_workspace_owner.me.name
   }
   annotations = {
     "com.coder.user.email"     = data.coder_workspace_owner.me.email
@@ -141,7 +148,7 @@ locals {
       user_name    = coalesce(data.coder_workspace_owner.me.full_name, data.coder_workspace_owner.me.name)
       user_email   = data.coder_workspace_owner.me.email
       gh_username  = local.gh_username
-      gh_email     = var.gh_email
+      gh_email     = local.gh_email
       gh_token     = local.gh_token
     }
     ".claude.json" = {
@@ -211,6 +218,8 @@ resource "kubernetes_deployment_v1" "this" {
           run_as_user = 1000
           fs_group    = 1000
         }
+
+        service_account_name = "coder"
 
         init_container {
           name  = "seed-home"
@@ -346,6 +355,24 @@ resource "kubernetes_deployment_v1" "this" {
           persistent_volume_claim {
             claim_name = kubernetes_persistent_volume_claim_v1.home.metadata[0].name
             read_only  = false
+          }
+        }
+
+        affinity {
+          pod_anti_affinity {
+            preferred_during_scheduling_ignored_during_execution {
+              weight = 1
+              pod_affinity_term {
+                topology_key = "kubernetes.io/hostname"
+                label_selector {
+                  match_expressions {
+                    key      = "app.kubernetes.io/name"
+                    operator = "In"
+                    values   = ["coder-workspace"]
+                  }
+                }
+              }
+            }
           }
         }
       }
