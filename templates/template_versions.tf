@@ -136,6 +136,6 @@ resource "coderd_template" "awshp-k8s-cc-memorycard" {
     tf_vars = [{
       name  = "namespace"
       value = "coder"
-    }
+    }]
   }]
 }
