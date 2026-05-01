@@ -68,7 +68,7 @@ resource "coder_script" "vscode" {
 locals {
   coder_agent_agent_envs = merge({
     CLAUDE_CODE_USE_BEDROCK    = "1"
-    ANTHROPIC_MODEL            = "claude-opus-4-5"
+    ANTHROPIC_MODEL            = "claude-opus-4-6"
     ANTHROPIC_SMALL_FAST_MODEL = "claude-haiku-4-5"
     COLORTERM                  = true
   }, {})
@@ -106,6 +106,7 @@ module "vscode-web" {
   accept_license          = true
   auto_install_extensions = true
   use_cached              = true
+  subdomain               = false
 
   agent_id = coder_agent.main.id
   folder   = local.work_folder
@@ -129,8 +130,9 @@ module "filebrowser" {
   source   = "registry.coder.com/coder/filebrowser/coder"
   version  = "1.1.4"
 
-  agent_id = coder_agent.main.id
-  order    = 999
+  agent_id  = coder_agent.main.id
+  subdomain = false
+  order     = 999
 }
 
 
@@ -249,7 +251,7 @@ resource "coder_app" "preview" {
   icon         = "/emojis/1f50e.png"
   url          = "http://localhost:${local.preview_port}"
   share        = "authenticated"
-  subdomain    = true
+  subdomain    = false
   open_in      = "tab"
   order        = 1
   healthcheck {
