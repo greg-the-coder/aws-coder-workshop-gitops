@@ -142,7 +142,10 @@ locals {
   agent_app_config_path = "${local.home_folder}/.claude.json"
   agent_app_claude_md_path = "${local.home_folder}/.claude/CLAUDE.md"
   agent_app_system_md = <<-EOF
-    Send a task status update to notify the user that you are ready for input, and then wait for user input.
+    First, report an initial task status update to Coder to show you have started.
+    Then, execute the user's task prompt. If the task involves a web application, ensure the dev server is running on the configured preview port before making changes.
+    After completing the task, use Playwright to verify your changes work if applicable.
+    Keep task status reports under 160 characters and be specific about what you're doing.
   EOF
 }
 
