@@ -196,18 +196,7 @@ resource "coder_app" "agent" {
 
     cd ${local.work_folder}
 
-    # If a Coder Task prompt exists, pass it directly to Claude Code.
-    # The prompt is written to a temp file by the agent setup script via
-    # coder exp mcp configure claude-code (--claude-coder-prompt).
-    CODER_PROMPT_FILE="/tmp/coder_prompt.txt"
-    echo ${base64encode(data.coder_task.me.prompt)} | base64 -d > "$CODER_PROMPT_FILE"
-    TASK_PROMPT=$(cat "$CODER_PROMPT_FILE" 2>/dev/null | tr -d '[:space:]')
-
-    if [ -n "$TASK_PROMPT" ]; then
-      exec /usr/local/bin/claude -p "$(cat $CODER_PROMPT_FILE)" --verbose
-    else
-      exec /usr/local/bin/claude --verbose
-    fi
+    exec /usr/local/bin/claude --dangerously-skip-permissions
   EOF
   share        = "owner"
   open_in      = "tab"
