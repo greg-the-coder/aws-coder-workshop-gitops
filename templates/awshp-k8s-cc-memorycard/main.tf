@@ -209,6 +209,7 @@ resource "coder_app" "agent" {
       exec /usr/local/bin/claude \
         --dangerously-skip-permissions \
         --output-format stream-json \
+        --verbose \
         -p "$(cat $CODER_PROMPT_FILE)"
     else
       # Interactive mode: no task prompt, let the user drive
