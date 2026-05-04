@@ -68,7 +68,7 @@ resource "coder_script" "vscode" {
 locals {
   coder_agent_agent_envs = merge({
     CLAUDE_CODE_USE_BEDROCK    = "1"
-    ANTHROPIC_MODEL            = "us.anthropic.claude-opus-4-6"
+    ANTHROPIC_MODEL            = "us.anthropic.claude-opus-4-6-v1"
     ANTHROPIC_SMALL_FAST_MODEL = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
     COLORTERM                  = true
   }, {})
