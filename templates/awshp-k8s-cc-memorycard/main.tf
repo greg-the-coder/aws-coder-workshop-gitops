@@ -205,10 +205,10 @@ resource "coder_app" "agent" {
     TASK_PROMPT=$(cat "$CODER_PROMPT_FILE" 2>/dev/null | tr -d '[:space:]')
 
     if [ -n "$TASK_PROMPT" ]; then
-      # Task mode: auto-execute the prompt in interactive TUI
+      # Task mode: feed the prompt into the interactive TUI via stdin
       exec /usr/local/bin/claude \
         --dangerously-skip-permissions \
-        --resume "$(cat $CODER_PROMPT_FILE)"
+        -m "$(cat $CODER_PROMPT_FILE)"
     else
       # Interactive mode: no task prompt, let the user drive
       exec /usr/local/bin/claude --dangerously-skip-permissions
