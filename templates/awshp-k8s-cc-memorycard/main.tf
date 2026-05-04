@@ -199,7 +199,21 @@ resource "coder_app" "agent" {
 
     cd ${local.work_folder}
 
-    exec /usr/local/bin/claude --dangerously-skip-permissions
+    # Decode the Coder Task prompt
+    CODER_PROMPT_FILE="/tmp/coder_prompt.txt"
+    echo ${base64encode(data.coder_task.me.prompt)} | base64 -d > "$CODER_PROMPT_FILE"
+    TASK_PROMPT=$(cat "$CODER_PROMPT_FILE" 2>/dev/null | tr -d '[:space:]')
+
+    if [ -n "$TASK_PROMPT" ]; then
+      # Task mode: auto-execute the prompt with streaming output for the Task UI
+      exec /usr/local/bin/claude \
+        --dangerously-skip-permissions \
+        --output-format stream-json \
+        -p "$(cat $CODER_PROMPT_FILE)"
+    else
+      # Interactive mode: no task prompt, let the user drive
+      exec /usr/local/bin/claude --dangerously-skip-permissions
+    fi
   EOF
   share        = "owner"
   open_in      = "tab"
