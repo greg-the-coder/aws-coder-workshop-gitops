@@ -3,7 +3,7 @@ data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 
 locals {
-  repo           = "https://github.com/coder-contrib/memory-card-ai-demo.git"
+  repo           = "https://github.com/greg-the-coder/memory-card-ai-demo.git"
   repo_name      = element(split(".", element(split("/", local.repo), -1)), 0)
   home_folder    = "/home/coder"
   work_folder    = join("/", [local.home_folder, local.repo_name])
@@ -68,8 +68,8 @@ resource "coder_script" "vscode" {
 locals {
   coder_agent_agent_envs = merge({
     CLAUDE_CODE_USE_BEDROCK    = "1"
-    ANTHROPIC_MODEL            = "claude-opus-4-6"
-    ANTHROPIC_SMALL_FAST_MODEL = "claude-haiku-4-5"
+    ANTHROPIC_MODEL            = "us.anthropic.claude-opus-4-6"
+    ANTHROPIC_SMALL_FAST_MODEL = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
     COLORTERM                  = true
   }, {})
   coder_agent_main_envs = merge({
