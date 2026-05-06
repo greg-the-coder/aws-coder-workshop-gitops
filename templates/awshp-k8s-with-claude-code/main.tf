@@ -195,9 +195,22 @@ resource "coder_script" "claude-code-setup" {
     set -e
 
     # Symlink claude and coder binaries
-    ln -sf /usr/local/bin/claude "$CODER_SCRIPT_BIN_DIR/claude"
+    ln -sf "$(which claude)" "$CODER_SCRIPT_BIN_DIR/claude"
     chmod +x "$CODER_SCRIPT_BIN_DIR/claude"
     ln -sf /tmp/coder.*/coder "$CODER_SCRIPT_BIN_DIR/coder"
+
+    # Safety net: install AWS CLI if not present
+    if ! command -v aws &>/dev/null; then
+      curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+      unzip -q /tmp/awscliv2.zip -d /tmp
+      sudo /tmp/aws/install
+      rm -rf /tmp/aws /tmp/awscliv2.zip
+    fi
+
+    # Safety net: install AWS CDK if not present
+    if ! command -v cdk &>/dev/null; then
+      sudo npm install -g aws-cdk
+    fi
 
     # Write system prompt and task prompt to temp files for MCP config
     ARG_SYSTEM_PROMPT=$(mktemp)
@@ -236,9 +249,9 @@ resource "coder_app" "claude-code" {
     TASK_PROMPT=$(cat "$CODER_PROMPT_FILE" 2>/dev/null | tr -d '[:space:]')
 
     if [ -n "$TASK_PROMPT" ]; then
-      exec /usr/local/bin/claude --dangerously-skip-permissions "$(cat $CODER_PROMPT_FILE)"
+      exec claude --dangerously-skip-permissions "$(cat $CODER_PROMPT_FILE)"
     else
-      exec /usr/local/bin/claude --dangerously-skip-permissions
+      exec claude --dangerously-skip-permissions
     fi
   EOF
   share        = "owner"
@@ -361,7 +374,7 @@ resource "kubernetes_deployment" "dev" {
         service_account_name = "coder"
         container {
           name              = "dev"
-          image             = "codercom/enterprise-base:ubuntu"
+          image             = "public.ecr.aws/f7a1d7a4/coder-aienv:1.1.5"
           image_pull_policy = "Always"
           command           = ["sh", "-c", coder_agent.dev.init_script]
           security_context {
