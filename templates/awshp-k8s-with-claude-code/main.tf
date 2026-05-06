@@ -153,6 +153,23 @@ resource "coder_agent" "dev" {
     startup_script = <<-EOT
     set -e
 
+    # Wait for Claude Code MCP setup to complete
+    timeout 60 bash -c 'until [ -f ${local.agent_app_config_path} ]; do sleep 2; done'
+
+    CODER_PROMPT_FILE="/tmp/coder_prompt.txt"
+    echo ${base64encode(data.coder_task.me.prompt)} | base64 -d > "$CODER_PROMPT_FILE"
+    TASK_PROMPT=$(cat "$CODER_PROMPT_FILE" 2>/dev/null | tr -d '[:space:]')
+
+    # Start Claude in a persistent tmux session (async, background)
+    if ! tmux has-session -t claude 2>/dev/null; then
+      if [ -n "$TASK_PROMPT" ]; then
+        tmux new-session -d -s claude -x 220 -y 50 \
+          "claude --dangerously-skip-permissions \"$(cat $CODER_PROMPT_FILE)\""
+      else
+        tmux new-session -d -s claude -x 220 -y 50 \
+          "claude --dangerously-skip-permissions"
+      fi
+    fi
     EOT
 
 }
@@ -238,22 +255,7 @@ resource "coder_app" "claude-code" {
   slug         = local.agent_app_slug
   display_name = "Claude Code"
   icon         = "/icon/claude.svg"
-  command      = <<-EOF
-    #!/bin/bash
-    set -e
-
-    cd ${local.home_dir}
-
-    CODER_PROMPT_FILE="/tmp/coder_prompt.txt"
-    echo ${base64encode(data.coder_task.me.prompt)} | base64 -d > "$CODER_PROMPT_FILE"
-    TASK_PROMPT=$(cat "$CODER_PROMPT_FILE" 2>/dev/null | tr -d '[:space:]')
-
-    if [ -n "$TASK_PROMPT" ]; then
-      exec claude --dangerously-skip-permissions "$(cat $CODER_PROMPT_FILE)"
-    else
-      exec claude --dangerously-skip-permissions
-    fi
-  EOF
+  command      = "tmux attach-session -t claude"
   share        = "owner"
   open_in      = "tab"
   order        = 999
