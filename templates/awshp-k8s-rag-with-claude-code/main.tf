@@ -212,8 +212,31 @@ resource "coder_agent" "dev" {
     startup_script = <<-EOT
     set -e
 
+    # Wait for Claude Code MCP setup to complete
+    timeout 120 bash -c 'until [ -f ${local.agent_app_config_path} ]; do sleep 2; done'
+
+    CODER_PROMPT_FILE="/tmp/coder_prompt.txt"
+    echo ${base64encode(local.task_prompt)} | base64 -d > "$CODER_PROMPT_FILE"
+    TASK_PROMPT=$(cat "$CODER_PROMPT_FILE" 2>/dev/null | tr -d '[:space:]')
+
+    # Start Claude in a persistent tmux session (async, background)
+    if ! tmux has-session -t claude 2>/dev/null; then
+      if [ -n "$TASK_PROMPT" ]; then
+        tmux new-session -d -s claude -x 220 -y 50 \
+          "claude --dangerously-skip-permissions \"$(cat $CODER_PROMPT_FILE)\""
+      else
+        tmux new-session -d -s claude -x 220 -y 50 \
+          "claude --dangerously-skip-permissions"
+      fi
+    fi
     EOT
 
+}
+
+locals {
+  agent_app_slug        = "claude-code"
+  agent_app_config_path = "${local.home_dir}/.claude.json"
+  agent_app_claude_md_path = "${local.home_dir}/.claude/CLAUDE.md"
 }
 
 module "coder-login" {
@@ -254,121 +277,88 @@ module "kiro" {
     order = 1
 }
 
-module "claude-code" {
-    count               = data.coder_workspace.me.start_count
-    source              = "registry.coder.com/coder/claude-code/coder"
-    version             = "4.7.1"
-    model               = var.anthropic_model
-    agent_id            = coder_agent.dev.id
-    workdir             = local.home_dir
-    subdomain           = false
-    ai_prompt           = local.task_prompt
-    system_prompt       = local.system_prompt
-    report_tasks        = true
-        
-    pre_install_script = <<-EOF
-    set -e    
-    
+resource "coder_script" "claude-code-setup" {
+  agent_id     = coder_agent.dev.id
+  display_name = "Claude Code Setup"
+  icon         = "/icon/claude.svg"
+  run_on_start = true
+  script       = <<-EOF
+    #!/bin/bash
+    set -e
+
     sudo apt update
     sudo apt install -y curl unzip gnupg dirmngr postgresql-client telnet
-    
-    # Move cross module/workspace requirements into single place to avoid race conditions
-    
-    # Create persistent bin directory
-    mkdir -p $HOME/bin
-    mkdir -p $HOME/.local/bin
-    
-    # Update PATH for current session
+
+    mkdir -p $HOME/bin $HOME/.local/bin
     export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
 
-    # install Node.js and npm (required for CDK)
-    if ! command -v node &> /dev/null; then
-      echo "Installing Node.js..."
-      # Add NodeSource repository for the latest LTS version
+    if ! command -v node &>/dev/null; then
       curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
       sudo apt-get install nodejs -y
-      
-      # Verify installation
-      node -v
-      npm -v
-      
-      echo "Node.js installation completed"
-    else
-      echo "Node.js is already installed"
-      node -v
     fi
 
-    # install AWS CLI to persistent location
-    if ! command -v aws &> /dev/null; then
-      echo "Installing AWS CLI..."
+    if ! command -v aws &>/dev/null; then
       cd $HOME
       curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
       unzip -q awscliv2.zip
-      
-      # Install to home directory instead of system-wide
       ./aws/install --install-dir $HOME/.local/aws-cli --bin-dir $HOME/.local/bin
-      
-      # Verify installation
-      aws --version
-      
-      # Cleanup
       rm -rf aws awscliv2.zip
-      
-      echo "AWS CLI installation completed"
-    else
-      echo "AWS CLI is already installed"
-      aws --version
     fi
 
-    # install AWS CDK to persistent location
-    if ! command -v cdk &> /dev/null; then
-      echo "Installing AWS CDK..."
-      
-      # Configure npm to use home directory for global packages
+    if ! command -v cdk &>/dev/null; then
       mkdir -p $HOME/.npm-global
       npm config set prefix "$HOME/.npm-global"
-      
-      # Install AWS CDK to home directory
       npm install -g aws-cdk
-      
-      # Create symlink in bin directory
       ln -sf $HOME/.npm-global/bin/cdk $HOME/.local/bin/cdk
-      
-      # Verify CDK installation
-      cdk --version
-      
-      echo "AWS CDK installation completed"
-    else
-      echo "AWS CDK is already installed"
-      cdk --version
     fi
 
-    #Symlink Coder Agent
-    ln -sf /tmp/coder.*/coder "$CODER_SCRIPT_BIN_DIR/coder" 
-   
-    # Enable Vector extension on Aurora PostgreSQL instance
+    if [ ! -f "$HOME/.local/bin/uv" ]; then
+      UV_UNMANAGED_INSTALL="$HOME/.local/bin" curl -LsSf https://astral.sh/uv/install.sh | sh
+    fi
+
+    # Symlink binaries
+    ln -sf "$(which claude)" "$CODER_SCRIPT_BIN_DIR/claude"
+    chmod +x "$CODER_SCRIPT_BIN_DIR/claude"
+    ln -sf /tmp/coder.*/coder "$CODER_SCRIPT_BIN_DIR/coder"
+
+    # Enable pgvector extension
     PGPASSWORD="${local.db_password}" psql -h ${module.aurora-pgvector.aurora_postgres_1_endpoint} -U ${local.db_username} -d ${local.db_name} -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
-    EOF
+    # Configure Claude Code MCP
+    ARG_SYSTEM_PROMPT=$(mktemp)
+    ARG_TASK_PROMPT=$(mktemp)
+    echo ${base64encode(local.system_prompt)} | base64 -d > "$ARG_SYSTEM_PROMPT"
+    echo ${base64encode(local.task_prompt)} | base64 -d > "$ARG_TASK_PROMPT"
 
-    post_install_script = <<-EOF
+    coder exp mcp configure claude-code ${local.home_dir} \
+      --auth=token \
+      --agent-token=$CODER_AGENT_TOKEN \
+      --agent-url=$CODER_AGENT_URL \
+      --claude-app-status-slug=${local.agent_app_slug} \
+      --claude-api-key=${data.coder_workspace_owner.me.session_token} \
+      --claude-config-path=${local.agent_app_config_path} \
+      --claude-md-path=${local.agent_app_claude_md_path} \
+      --claude-system-prompt="$(cat $ARG_SYSTEM_PROMPT)" \
+      --claude-coder-prompt="$(cat $ARG_TASK_PROMPT)"
 
-    # Install uv (Python package manager) which includes uvx         
-    if [ ! -f "$HOME/.local/bin/uv" ]; then                          
-      UV_UNMANAGED_INSTALL="$HOME/.local/bin" curl -LsSf https://astral.sh/uv/install.sh | sh                             
-    fi   
+    echo "Claude Code MCP configuration complete."
+  EOF
+}
 
-    # Add MCP Servers via claude cli
-    #claude mcp add <TBD>
-
-    EOF
-
-    order               = 999
+resource "coder_app" "claude-code" {
+  agent_id     = coder_agent.dev.id
+  slug         = local.agent_app_slug
+  display_name = "Claude Code"
+  icon         = "/icon/claude.svg"
+  command      = "tmux attach-session -t claude"
+  share        = "owner"
+  open_in      = "tab"
+  order        = 999
 }
 
 resource "coder_ai_task" "claude-code" {
-    count  = data.coder_workspace.me.start_count
-    app_id = module.claude-code[0].task_app_id
+  count  = data.coder_task.me.enabled ? 1 : 0
+  app_id = coder_app.claude-code.id
 }
 
 resource "coder_app" "preview" {
