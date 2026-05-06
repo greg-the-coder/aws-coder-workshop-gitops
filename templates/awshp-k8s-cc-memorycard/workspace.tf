@@ -75,50 +75,8 @@ resource "coder_env" "main" {
   value    = each.value
 }
 
-# resource "coder_agent" "main-agent" {
-#   arch = "amd64"
-#   os   = "linux"
-#   connection_timeout = 300
-#   dir  = local.home_folder
-
-#   display_apps {
-#     vscode          = false
-#     vscode_insiders = false
-#     web_terminal    = false
-#     ssh_helper      = false
-#   }
-
-#   metadata {
-#     display_name = "CPU Usage (Workspace)"
-#     key          = "cpu_usage"
-#     order        = 0
-#     script       = "coder stat cpu"
-#     interval     = 10
-#     timeout      = 1
-#   }
-
-#   metadata {
-#     display_name = "RAM Usage (Workspace)"
-#     key          = "ram_usage"
-#     order        = 1
-#     script       = "coder stat mem"
-#     interval     = 10
-#     timeout      = 1
-#   }
-
-#   metadata {
-#     display_name = "Disk Usage (Host)"
-#     key          = "disk_host"
-#     order        = 6
-#     script       = "coder stat disk --path / --prefix Gi"
-#     interval     = 600
-#     timeout      = 10
-#   }
-# }
-
 resource "coder_env" "agent" {
-  for_each = local.coder_agent_agent_envs
-  # agent_id = coder_agent.main-agent.id
+  for_each = local.coder_agent_envs
   agent_id = coder_agent.main.id
   name     = each.key
   value    = each.value
@@ -380,47 +338,6 @@ resource "kubernetes_deployment_v1" "this" {
             }
           }
         }
-
-        # container {
-        #   name              = "agent"
-        #   image             = local.ws_img
-        #   image_pull_policy = "IfNotPresent"
-        #   command = ["sh", "-c", join("\n", [
-        #     try(coder_agent.main-agent.init_script, "")
-        #   ])]
-
-        #   security_context {
-        #     run_as_user                = 1000
-        #     allow_privilege_escalation = false
-        #     privileged                 = false
-        #     read_only_root_filesystem  = false
-        #   }
-
-        #   resources {
-        #     limits = {
-        #       cpu               = "2"
-        #       memory            = "4Gi"
-        #     }
-        #     requests = {
-        #       cpu               = "2"
-        #       memory            = "4Gi"
-        #     }
-        #   }
-
-        #   volume_mount {
-        #     name       = "home"
-        #     mount_path = "${local.home_folder}"
-        #     read_only  = false
-        #   }
-
-        #   dynamic "env" {
-        #     for_each = { CODER_AGENT_TOKEN = try(coder_agent.main-agent.token, "") }
-        #     content {
-        #       name  = env.key
-        #       value = env.value
-        #     }
-        #   }
-        # }
 
         volume {
           name = "home"

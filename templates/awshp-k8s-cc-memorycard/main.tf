@@ -4,11 +4,11 @@ data "coder_workspace_owner" "me" {}
 
 locals {
   repo           = "https://github.com/greg-the-coder/memory-card-ai-demo.git"
-  repo_name      = element(split(".", element(split("/", local.repo), -1)), 0)
+  repo_name      = element(split(".", reverse(split("/", local.repo))[0]), 0)
   home_folder    = "/home/coder"
   work_folder    = join("/", [local.home_folder, local.repo_name])
   preview_port   = data.coder_parameter.preview_port.value == "" ? 5173 : data.coder_parameter.preview_port.value
-  domain         = element(split("/", data.coder_workspace.me.access_url), -1)
+  domain         = reverse(split("/", data.coder_workspace.me.access_url))[0]
   gh_token       = var.gh_token
   gh_username    = var.gh_username != "" ? var.gh_username : data.coder_workspace_owner.me.name
   gh_email       = var.gh_email != "" ? var.gh_email : data.coder_workspace_owner.me.email
@@ -19,15 +19,6 @@ module "coder-login" {
   source   = "registry.coder.com/coder/coder-login/coder"
   version  = "1.1.1"
 
-  agent_id = coder_agent.main.id
-}
-
-module "coder-login-agent" {
-  count    = data.coder_workspace.me.start_count
-  source   = "registry.coder.com/coder/coder-login/coder"
-  version  = "1.1.1"
-
-  # agent_id = coder_agent.main-agent.id
   agent_id = coder_agent.main.id
 }
 
@@ -66,7 +57,7 @@ resource "coder_script" "vscode" {
 }
 
 locals {
-  coder_agent_agent_envs = merge({
+  coder_agent_envs = merge({
     CLAUDE_CODE_USE_BEDROCK    = "1"
     ANTHROPIC_MODEL            = "us.anthropic.claude-opus-4-6-v1"
     ANTHROPIC_SMALL_FAST_MODEL = "us.anthropic.claude-haiku-4-5-20251001-v1:0"

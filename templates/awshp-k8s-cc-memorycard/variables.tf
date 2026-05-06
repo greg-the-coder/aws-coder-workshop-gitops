@@ -25,34 +25,6 @@ variable "namespace" {
   default     = "coder"
 }
 
-data "coder_parameter" "select_ai" {
-  name        = "Select an AI Companion"
-  description = "Which AI companion would you like to assist you?"
-  icon        = "/emojis/1f916.png"
-  mutable     = true
-  type        = "string"
-  form_type   = "dropdown"
-  default     = "claude-code"
-  order       = 1
-
-  option {
-    name  = "Claude"
-    icon  = "/icon/claude.svg"
-    value = "claude-code"
-  }
-}
-
-# data "coder_parameter" "system_prompt" {
-#   name        = "AI System Prompt"
-#   description = "Configure your AI companion to adhere to certain rules!"
-#   icon        = "/emojis/1f916.png"
-#   mutable     = true
-#   default     = ""
-#   type        = "string"
-#   form_type   = "textarea"
-#   order       = 3
-# }
-
 data "coder_parameter" "preview_port" {
   name        = "Preview Port"
   description = "The port the web app is running on to preview in Coder Tasks!"
