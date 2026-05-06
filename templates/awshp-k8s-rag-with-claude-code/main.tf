@@ -471,7 +471,7 @@ resource "kubernetes_deployment" "dev" {
         service_account_name = "coder"
         container {
           name              = "dev"
-          image             = "codercom/enterprise-base:ubuntu"
+          image             = "public.ecr.aws/f7a1d7a4/coder-aienv:1.1.5"
           image_pull_policy = "Always"
           command           = ["sh", "-c", coder_agent.dev.init_script]
           security_context {
