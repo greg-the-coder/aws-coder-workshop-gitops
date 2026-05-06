@@ -173,8 +173,25 @@ resource "coder_script" "agent" {
       --claude-md-path=${local.agent_app_claude_md_path} \
       --claude-system-prompt="$(cat $ARG_CODER_MCP_CLAUDE_SYSTEM_PROMPT)" \
       --claude-coder-prompt="$(cat $ARG_CODER_MCP_CLAUDE_CODER_PROMPT)"
-    
+
     echo "Done!"
+
+    # Wait for MCP config to be written, then start Claude async in tmux
+    timeout 60 bash -c 'until [ -f ${local.agent_app_config_path} ]; do sleep 2; done'
+
+    CODER_PROMPT_FILE="/tmp/coder_prompt.txt"
+    echo ${base64encode(data.coder_task.me.prompt)} | base64 -d > "$CODER_PROMPT_FILE"
+    TASK_PROMPT=$(cat "$CODER_PROMPT_FILE" 2>/dev/null | tr -d '[:space:]')
+
+    if ! tmux has-session -t claude 2>/dev/null; then
+      if [ -n "$TASK_PROMPT" ]; then
+        tmux new-session -d -s claude -x 220 -y 50 \
+          "/usr/local/bin/claude --dangerously-skip-permissions \"$(cat $CODER_PROMPT_FILE)\""
+      else
+        tmux new-session -d -s claude -x 220 -y 50 \
+          "/usr/local/bin/claude --dangerously-skip-permissions"
+      fi
+    fi
   EOF
 }
 
@@ -183,28 +200,7 @@ resource "coder_app" "agent" {
   slug         = local.agent_app_slug
   display_name = "AI Agent"
   icon         = "/icon/claude.svg"
-  command      = <<-EOF
-    #!/bin/bash
-
-    set -e
-
-    cd ${local.work_folder}
-
-    # Decode the Coder Task prompt
-    CODER_PROMPT_FILE="/tmp/coder_prompt.txt"
-    echo ${base64encode(data.coder_task.me.prompt)} | base64 -d > "$CODER_PROMPT_FILE"
-    TASK_PROMPT=$(cat "$CODER_PROMPT_FILE" 2>/dev/null | tr -d '[:space:]')
-
-    if [ -n "$TASK_PROMPT" ]; then
-      # Task mode: start interactive TUI with the task prompt as initial message
-      exec /usr/local/bin/claude \
-        --dangerously-skip-permissions \
-        "$(cat $CODER_PROMPT_FILE)"
-    else
-      # Interactive mode: no task prompt, let the user drive
-      exec /usr/local/bin/claude --dangerously-skip-permissions
-    fi
-  EOF
+  command      = "tmux attach-session -t claude"
   share        = "owner"
   open_in      = "tab"
   order        = 2
