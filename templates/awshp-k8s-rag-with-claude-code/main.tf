@@ -54,12 +54,12 @@ data "coder_parameter" "cpu" {
   description = "CPU cores for your individual workspace"
   icon        = "https://png.pngtree.com/png-clipart/20191122/original/pngtree-processor-icon-png-image_5165793.jpg"
   validation {
-    min = 4
-    max = 8
+    min = 2
+    max = 4
   }
   form_type = "input"
   mutable   = true
-  default   = 4
+  default   = 2
   order     = 1
 }
 
@@ -70,8 +70,8 @@ data "coder_parameter" "memory" {
   description = "Memory (__ GB) for your individual workspace"
   icon        = "https://www.vhv.rs/dpng/d/33-338595_random-access-memory-logo-hd-png-download.png"
   validation {
-    min = 4
-    max = 16
+    min = 2
+    max = 8
   }
   form_type = "input"
   mutable   = true
@@ -483,8 +483,8 @@ resource "kubernetes_deployment" "dev" {
           }
           resources {
             requests = {
-              "cpu"    = "250m"
-              "memory" = "512Mi"
+              "cpu"    = "${data.coder_parameter.cpu.value}"
+              "memory" = "${data.coder_parameter.memory.value}Gi"
             }
             limits = {
               "cpu"    = "${data.coder_parameter.cpu.value}"
