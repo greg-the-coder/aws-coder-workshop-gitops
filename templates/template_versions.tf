@@ -123,6 +123,7 @@ resource "coderd_template" "awshp-k8s-rag-with-claude-code" {
     }]
   }]
 }
+
 resource "coderd_template" "awshp-k8s-cc-memorycard" {
   name        = "awshp-k8s-claude-code-memorycard"
   display_name = "AWS Workshop Kubernetes Memorycard with Claude Code"
