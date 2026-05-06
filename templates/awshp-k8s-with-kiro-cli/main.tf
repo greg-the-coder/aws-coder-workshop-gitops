@@ -232,30 +232,7 @@ resource "coder_agent" "dev" {
     ln -sf /tmp/coder.*/coder "$CODER_SCRIPT_BIN_DIR/coder" 
 
     EOT
-
-}
-
-module "coder-login" {
-    source   = "registry.coder.com/coder/coder-login/coder"
-    version  = "1.1.0"
-    agent_id = coder_agent.dev.id
-}
-
-module "code-server" {
-    source   = "registry.coder.com/coder/code-server/coder"
-    version  = "1.3.1"
-    agent_id       = coder_agent.dev.id
-    folder         = local.home_dir
-    subdomain = false
-    order = 0
-}
-
-module "kiro" {
-    source   = "registry.coder.com/coder/kiro/coder"
-    version  = "1.1.0"
-    agent_id = coder_agent.dev.id
-    order = 1
-}
+    
   # The following metadata blocks are optional. They are used to display
   # information about your workspace in the dashboard. You can remove them
   # if you don't want to display any information.
@@ -311,7 +288,29 @@ module "kiro" {
     interval = 60
     timeout  = 1
   }
+}
 
+module "coder-login" {
+    source   = "registry.coder.com/coder/coder-login/coder"
+    version  = "1.1.0"
+    agent_id = coder_agent.dev.id
+}
+
+module "code-server" {
+    source   = "registry.coder.com/coder/code-server/coder"
+    version  = "1.3.1"
+    agent_id       = coder_agent.dev.id
+    folder         = local.home_dir
+    subdomain = false
+    order = 0
+}
+
+module "kiro" {
+    source   = "registry.coder.com/coder/kiro/coder"
+    version  = "1.1.0"
+    agent_id = coder_agent.dev.id
+    order = 1
+}
 
 resource "kubernetes_persistent_volume_claim" "home" {
   metadata {
