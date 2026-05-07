@@ -24,7 +24,7 @@ Try prompts such as:
 This template deploys a Kubernetes pod with:
 
 - A **single Coder agent** (`coder_agent.main`) running in a container based on `coder-aienv:1.1.5`
-- An **init container** that seeds the home directory from a Kubernetes ConfigMap with pre-configured dotfiles
+- A **startup script** that seeds the home directory with pre-configured dotfiles and AI agent configuration
 - A **25GB persistent volume** for workspace storage
 - Resource limits of **2 CPU / 4GB RAM**
 
@@ -32,13 +32,12 @@ This template deploys a Kubernetes pod with:
 
 | App / Module | Description |
 |---|---|
-| **AI Agent** | Claude Code with network security controls and MCP servers (GitHub, Playwright) |
+| **AI Agent** | Claude Code running in a tmux session with MCP servers (GitHub, Playwright) |
 | **Preview App** | Vite dev server on port 5173 with health checks |
 | **VS Code Web** | Browser-based VS Code with Prettier extension |
 | **VS Code Desktop** | Native VS Code via SSH |
 | **File Browser** | Web-based file manager |
 | **Portable Desktop** | Full desktop environment in the browser |
-| **AI Proxy** | AI proxy for task management and model routing |
 
 ### Home directory seeding
 
