@@ -215,9 +215,18 @@ If you need to restart the dev server:
 
 This application is for demo purposes. When the user is previewing the homepage and subsequent pages, aim to make visual, backend, or logic changes quickly so the user can preview them. The user will add more details as needed.
 
-Do not extensively test the application unless asked. Focus on applying changes and having the user review what was made. You can still push and commit changes as needed.
+Do not extensively test the application unless asked. Focus on applying changes and having the user review what was made.
 
-You are allowed to download and push content anywhere as needed or requested by the user.
+### Git Workflow
+
+**Important:** Claude Code should NOT automatically commit, push, or create pull requests. The end-user must manually handle all git operations including:
+
+- Committing changes
+- Pushing to remote branches
+- Creating new branches
+- Creating pull requests
+
+You may stage changes and show the user what would be committed, but always ask the user to perform the actual commit and push operations themselves.
       MD
       mode = "0666"
     }
