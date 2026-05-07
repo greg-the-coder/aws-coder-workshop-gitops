@@ -64,7 +64,6 @@ The workspace includes:
 - **AI Agent (Claude Code)**: Running with network security controls, GitHub and Playwright MCP servers
 - **Preview App**: Live Vite dev server on port 5173 with health checks
 - **VS Code Web**: Browser-based editor with Prettier extension
-- **AI Proxy**: Parallel task management and model routing
 
 #### Step 2: Monitor AI Agent Progress
 

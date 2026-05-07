@@ -11,10 +11,7 @@ tags: [kubernetes, container, ai, tasks]
 This is an example app cloned from [coder-contrib/memory-card-ai-demo](https://github.com/coder-contrib/memory-card-ai-demo), deployed on Kubernetes with AI-powered development assistance. We include:
 
 - [Anthropic - Claude Code](https://www.claude.com/product/claude-code) as the AI agent
-- [Coder - AI Tasks](https://coder.com/docs/ai-coder/tasks) for task-based AI workflows
-- [Coder - AI Bridge](https://coder.com/docs/ai-coder/ai-bridge) for model routing
-- [Coder - Agent Boundary](https://coder.com/docs/ai-coder/agent-boundary) for network security
-- [Coder - MUX](https://registry.coder.com/modules/coder/mux) for AI task management
+- [Coder](https://coder.com/docs) for task-based AI workflows, model routing, and network security
 
 Try prompts such as:
 
@@ -35,33 +32,31 @@ This template deploys a Kubernetes pod with:
 
 | App / Module | Description |
 |---|---|
-| **AI Agent** | Claude Code running behind Agent Boundary with MCP servers (GitHub, Playwright) |
+| **AI Agent** | Claude Code with network security controls and MCP servers (GitHub, Playwright) |
 | **Preview App** | Vite dev server on port 5173 with health checks |
 | **VS Code Web** | Browser-based VS Code with Prettier extension |
 | **VS Code Desktop** | Native VS Code via SSH |
 | **File Browser** | Web-based file manager |
 | **Portable Desktop** | Full desktop environment in the browser |
-| **Coder MUX** | AI proxy for task management (optional, togglable) |
+| **AI Proxy** | AI proxy for task management and model routing |
 
 ### Home directory seeding
 
-Configuration files are stored in the `home/` directory and mounted into the workspace via a Kubernetes ConfigMap. Templated files (e.g. `.claude/settings.json`, `.mux/providers.jsonc`) are rendered with workspace-specific values at deploy time. Per-file permissions are supported via `home_files_mode_overrides` in `workspace.tf`.
+Configuration files are stored in the `home/` directory and seeded into the workspace via a startup script. Templated files (e.g. `.claude.json`, `.mcp.json`) are rendered with workspace-specific values at deploy time.
 
 ### Workspace parameters
 
 | Parameter | Description | Default |
 |---|---|---|
-| `select_ai` | AI companion selector | `claude-code` |
-| `preview_port` | Port for the Vite dev server | `5173` |
-| `use_bots_git_creds` | Use coder-contrib bot Git credentials | `true` |
-| `enable_mux` | Toggle Coder MUX on/off | `true` |
+| `Preview Port` | Port for the Vite dev server | `5173` |
+| `Use Bot's Git Credentials?` | Use coder-contrib bot Git credentials | `true` |
 
 
 
 ### Prerequisites
 
 - A Coder deployment (see [install docs](https://coder.com/docs/install)) with a connected Kubernetes cluster
-- [AI Bridge](https://coder.com/docs/ai-coder/ai-bridge) configured with access to Anthropic models (Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5)
+- Coder AI model routing configured with access to Anthropic models (Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5)
 - GitHub external auth configured with ID `primary-github` (optional, for user-owned Git credentials)
 - Template variables set: `gh_token`, `gh_username`, `gh_email`, `namespace`
 
@@ -77,7 +72,7 @@ curl -L https://coder.com/install.sh | sh
 coder login https://coder.example.com
 
 # Navigate to this template directory
-cd templates/deployments/ai.coder.com/coder/memorycard
+cd templates/awshp-k8s-cc-memorycard
 
 # Push the template
 coder templates push
