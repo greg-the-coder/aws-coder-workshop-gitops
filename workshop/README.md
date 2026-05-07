@@ -8,9 +8,10 @@ Welcome to the AI-Driven Development Workflows module! Now that you have deploye
 
 In this module, you will:
 
-1. **Learn AI-Powered Coding Workflows** - Experience intelligent code generation, completion, and refactoring with Amazon Q Developer and AWS Bedrock
+1. **Learn AI-Powered Coding Workflows** - Experience intelligent code generation, completion, and refactoring with Amazon Kiro and AWS Bedrock
 2. **Create Intelligent Deployment Automation** - Deploy applications using AI-powered infrastructure provisioning and optimization
 3. **Build Agentic Development Workflows** - Create autonomous development agents that handle routine tasks and complex problem-solving
+4. **Experience AI-Powered Game Development** - Build and modify a Memory Card Game using Claude Code with autonomous AI task workflows
 
 ## The AI-First Development Philosophy
 
@@ -53,15 +54,27 @@ Our AI-driven development platform integrates multiple AWS AI services with Code
 4. **Smart Code Review**: AI identifies potential issues, security vulnerabilities, and optimization opportunities
 5. **Intelligent Deployment**: AI optimizes infrastructure configuration and deployment strategy
 
+### Scenario 2: AI-Driven Game Development
+**Traditional Time**: Days  
+**AI-Driven Time**: Minutes
+
+1. **AI Task Creation**: Natural language prompt → autonomous Claude Code task execution
+2. **Live Preview**: Vite dev server with hot-reload for instant visual feedback
+3. **Network Security**: Controls ensure safe AI agent operation
+4. **Parallel Orchestration**: AI task management for complex modifications
+5. **Playwright Verification**: Automated browser testing confirms changes work correctly
+
 ### Module Learning Objectives
 
 By the end of this module, you will be able to:
 
 **AI-Powered Development Skills:**
-- Leverage Amazon Q Developer for intelligent code completion and generation
+- Leverage Amazon Kiro for intelligent code completion and generation
 - Use AWS Bedrock/Anthropic Claude Code for advanced code review and architectural guidance
 - Implement AI-driven refactoring and optimization workflows
 - Create context-aware development assistants
+- Use Claude Code for autonomous AI-driven development workflows
+- Leverage secure, model-routed AI interactions for safe agent operation
 
 > **💡 AI Development Mindset**: Think of AI as your intelligent pair programming partner. The goal is human-AI collaboration that amplifies creativity and productivity.
 

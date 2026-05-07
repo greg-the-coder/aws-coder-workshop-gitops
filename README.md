@@ -47,10 +47,11 @@ coder login $CODER_AGENT_URL
 
 ## [Coder Templates](templates/README.md)
 
-Five specialized workspace templates for AWS development:
+Six specialized workspace templates for AWS development:
 
 - **[Kubernetes with Claude Code](templates/awshp-k8s-with-claude-code/)**: Cloud-native development with Claude Code 4.7.1 AI assistant and AWS Bedrock integration
 - **[Kubernetes RAG with Claude Code](templates/awshp-k8s-rag-with-claude-code/)**: RAG application prototyping with Aurora PostgreSQL pgvector and Claude Code
+- **[Kubernetes Memorycard with Claude Code](templates/awshp-k8s-cc-memorycard/)**: Memory Card Game development with Claude Code AI agent and autonomous task workflows
 - **[Kubernetes with Kiro CLI](templates/awshp-k8s-with-kiro-cli/)**: AI development assistant with MCP server support and AWS tools
 - **[Linux SAM](templates/awshp-linux-sam/)**: Serverless development with AWS SAM CLI on ARM64
 - **[Windows DCV](templates/awshp-windows-dcv/)**: Windows development with NICE DCV remote desktop

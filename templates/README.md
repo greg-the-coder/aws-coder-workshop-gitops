@@ -34,16 +34,22 @@ This directory contains Coder workspace templates designed for AWS development w
 **Key Tools**: Claude Code, pgvector, AWS Bedrock, Streamlit, Python tooling  
 **Best For**: AI/ML applications, vector search, RAG prototyping, data science
 
+### 🎴 [Kubernetes Memorycard with Claude Code](awshp-k8s-cc-memorycard/)
+**Purpose**: Memory Card Game development with AI-powered coding assistance  
+**Architecture**: Kubernetes pods with persistent volumes  
+**Key Tools**: Claude Code, Playwright MCP, GitHub MCP, Vite  
+**Best For**: AI-driven game development, interactive demos, autonomous AI workflows, AI agent experimentation
+
 ## Template Comparison
 
-| Feature | K8s Kiro CLI | Linux SAM | Windows DCV | K8s Claude Code | K8S RAG Claude Code |
-|---------|------------------|-----------|-------------|-----------------|-----------------|
-| **Platform** | Kubernetes | Ubuntu ARM64 | Windows Server | Kubernetes | Kubernetes |
-| **AI Assistant** | Kiro CLI + MCP | Kiro Extension | - | Claude Code | Claude Code |
-| **Primary Use** | General AWS Dev | Serverless | Windows Dev | Container Dev | GenAI/RAG Dev |
-| **Cost Efficiency** | Variable | High (ARM64) | Higher | Variable | Variable |
-| **Persistence** | Home directory | Full VM | Full VM | Home directory | Home directory |
-| **Startup Time** | ~30-60 sec | ~2-3 min | ~5-10 min | ~30-60 sec | ~5-10 min |
+| Feature | K8s Kiro CLI | Linux SAM | Windows DCV | K8s Claude Code | K8S RAG Claude Code | K8s Memorycard |
+|---------|------------------|-----------|-------------|-----------------|-----------------|-----------------|
+| **Platform** | Kubernetes | Ubuntu ARM64 | Windows Server | Kubernetes | Kubernetes | Kubernetes |
+| **AI Assistant** | Kiro CLI + MCP | Kiro Extension | - | Claude Code | Claude Code | Claude Code |
+| **Primary Use** | General AWS Dev | Serverless | Windows Dev | Container Dev | GenAI/RAG Dev | Game Dev / AI Demo |
+| **Cost Efficiency** | Variable | High (ARM64) | Higher | Variable | Variable | Variable |
+| **Persistence** | Home directory | Full VM | Full VM | Home directory | Home directory | Home directory |
+| **Startup Time** | ~30-60 sec | ~2-3 min | ~5-10 min | ~30-60 sec | ~5-10 min | ~30-60 sec |
 
 ## Getting Started
 
@@ -84,6 +90,13 @@ This directory contains Coder workspace templates designed for AWS development w
 - Vector database integration
 - AI/ML prototyping with Bedrock
 - Streamlit-based data applications
+
+**Choose Kubernetes Memorycard Claude Code if you want:**
+- AI-powered game development with Claude Code
+- Interactive demo applications with live preview
+- Autonomous AI-driven development workflows
+- Network security controls for safe AI agent operation
+- Quick iteration with Vite hot-reload
 
 ## Configuration
 

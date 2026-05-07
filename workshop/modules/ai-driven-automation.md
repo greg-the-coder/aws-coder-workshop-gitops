@@ -40,3 +40,50 @@ Once your initial Task completes:
 Take some time on your own and explore each of the created Tasks and evaluate the results of the remediation activities performed by Claude Code.  Experiment by instructing Claude Code to unit test the changes and/or smoke-test a deployment to your AWS account.
 
 > **🚀 Workflow Automation**: These AI automation workflows can reduce time spent on routine activities, while dramatically boosting developer productivity. Start by automating one workflow and experimenting until you get consistent results. Gradually add more AI automation workflows as your team becomes comfortable with specific Agent capabilities and required prompts to get the desired results.
+
+### Workflow 3: AI-Driven Game Development with Autonomous AI Agents
+#### Scenario: Modify a Memory Card Game using autonomous AI agents
+
+Let's use autonomous AI task workflows to modify a Memory Card Game application with Claude Code.
+
+#### Step 1: Create Your Memorycard Task Workspace
+
+Create a Task using the AWS Workshop Kubernetes Memorycard with Claude Code template:
+1. **Access your Coder dashboard** and click "Tasks"
+2. **Within the Task UI, Select the AWS Workshop Kubernetes Memorycard with Claude Code template from the drop-down**
+3. **Configure the Task prompt**:
+```bash
+Change the card back design to a red diamond pattern and add an option to choose difficulty levels (4x4, 6x6, 8x8 grids)
+```
+
+4. **Click "Run task"** and wait for it to start
+
+> **ℹ️ Info**: The Coder Task UI will automatically provision the workspace, clone the Memory Card game repository, start the Vite dev server, and Claude Code will begin executing your task prompt autonomously.
+
+The workspace includes:
+- **AI Agent (Claude Code)**: Running with network security controls, GitHub and Playwright MCP servers
+- **Preview App**: Live Vite dev server on port 5173 with health checks
+- **VS Code Web**: Browser-based editor with Prettier extension
+- **AI Proxy**: Parallel task management and model routing
+
+#### Step 2: Monitor AI Agent Progress
+
+Once your Task starts:
+
+1. **Open the AI Agent app** from the workspace to see Claude Code's terminal session
+2. **Open the Preview App** to see live changes as they're made
+3. **Monitor Claude Code's todo list** as it breaks down and executes the task
+4. **Playwright verification** will automatically confirm changes work in the browser
+
+#### Step 3: Review and Iterate
+
+After the task completes:
+
+1. **Review the changes** in the Preview App or VS Code Web
+2. **Open a terminal** and review git status to see what was modified
+3. **Try additional prompts** such as:
+   - "Create a theme selector with light and dark modes"
+   - "Add a score tracking system with high scores"
+   - "Implement card flip animations"
+
+> **🎴 Game Development with AI**: The Memorycard template demonstrates how autonomous AI workflows can develop interactive applications. Claude Code handles the full development cycle—from understanding requirements to implementing changes and verifying them with Playwright—while you focus on directing what to build.
