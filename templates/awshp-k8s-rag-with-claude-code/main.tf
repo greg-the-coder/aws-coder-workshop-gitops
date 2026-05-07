@@ -75,7 +75,7 @@ data "coder_parameter" "memory" {
   }
   form_type = "input"
   mutable   = true
-  default   = 4
+  default   = 6
   order     = 2
 }
 
