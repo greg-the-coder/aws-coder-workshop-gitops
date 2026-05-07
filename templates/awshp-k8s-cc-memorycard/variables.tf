@@ -47,3 +47,14 @@ locals {
   memory-card-port = 5173
 }
 
+data "coder_workspace_preset" "memory-card" {
+  name        = "Memory Card Game"
+  description = "Work on a Memory Card Game Using AI"
+  icon        = "/emojis/1f3b0.png"
+  default     = true
+  parameters = {
+    "Preview Port"             = local.memory-card-port
+    "Use Bot's Git Credentials?" = true
+  }
+}
+
