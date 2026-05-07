@@ -45,16 +45,5 @@ data "coder_parameter" "use_bots_git_creds" {
 
 locals {
   memory-card-port = 5173
-  memory-card = {
-    "Preview Port" = local.memory-card-port
-    (data.coder_parameter.use_bots_git_creds.name) = true
-  }
 }
 
-data "coder_workspace_preset" "memory-card-ohio" {
-  name        = "Ohio"
-  description = "Work on a Memory Card Game Using AI"
-  icon        = "/emojis/1f1fa-1f1f8.png"
-  default     = true
-  parameters  = merge(local.memory-card, {})
-}

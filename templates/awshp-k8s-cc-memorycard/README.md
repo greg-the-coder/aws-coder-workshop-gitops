@@ -56,7 +56,7 @@ Configuration files are stored in the `home/` directory and mounted into the wor
 | `use_bots_git_creds` | Use coder-contrib bot Git credentials | `true` |
 | `enable_mux` | Toggle Coder MUX on/off | `true` |
 
-A [Workspace Preset](https://coder.com/docs/admin/templates/extending-templates/parameters#workspace-presets) named **"Ohio"** pre-configures the preview port and enables bot Git credentials.
+
 
 ### Prerequisites
 
